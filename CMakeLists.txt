@@ -8,7 +8,7 @@ set(ENV{VK_LAYER_PATH} /Users/lapua/programs/vulkansdk-macos-1.2.135.0/macOS/sha
 
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
-add_executable(vulkan_cube src/main.cpp)
+add_executable(vulkan_cube src/main.cpp src/draw/vulkan.hpp src/draw/instance.hpp)
 
 find_package(glfw3 3.3 REQUIRED)
 target_link_libraries(${PROJECT_NAME} glfw)
