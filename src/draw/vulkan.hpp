@@ -4,20 +4,27 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include "instance.hpp"
+#include "device_queue.hpp"
 #include <GLFW/glfw3.h>
 
 class Vulkan {
 private:
     const uint32_t WIDTH = 800;
     const uint32_t HEIGHT = 600;
+
     GLFWwindow* window;
     VkInstance instance;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device;
+    VkQueue graphicsQueue;
 
-    Instance creatInstance;
+    Instance iCreatInstance;
+    DeviceQueue iPhysicalDevice;
 
     void initVulkan() {
         initWindow();
-        creatInstance.run(&instance);
+        iCreatInstance.createInstance(&instance);
+        iPhysicalDevice.run(&physicalDevice, &instance);
     }
 
     void initWindow() {
@@ -36,7 +43,7 @@ private:
     }
 
     void cleanUp() {
-        creatInstance.destroyInstance();
+        iCreatInstance.destroyInstance();
         glfwDestroyWindow(window);
         glfwTerminate();
     }

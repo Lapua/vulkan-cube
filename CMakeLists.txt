@@ -5,10 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(ENV{VK_ICD_FILENAMES} /Users/lapua/programs/vulkansdk-macos-1.2.135.0/macOS/share/vulkan/icd.d/MoltenVK_icd.json)
 set(ENV{VK_LAYER_PATH} /Users/lapua/programs/vulkansdk-macos-1.2.135.0/macOS/share/vulkan/explicit_layer.d)
+set(ENV{glfw3_DIR} /usr/local/Cellar/glfw/HEAD-d7ae90a/lib/cmake/glfw3)
 
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
-add_executable(vulkan_cube src/main.cpp src/draw/vulkan.hpp src/draw/instance.hpp)
+add_executable(vulkan_cube src/main.cpp src/draw/vulkan.hpp src/draw/instance.hpp src/draw/device_queue.hpp src/debugger.hpp src/draw/queueFamilies.hpp)
 
 find_package(glfw3 3.3 REQUIRED)
 target_link_libraries(${PROJECT_NAME} glfw)

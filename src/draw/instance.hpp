@@ -10,7 +10,9 @@ class Instance {
 private:
     VkInstance* instance;
 
-    void createInstance() {
+public:
+    void createInstance(VkInstance* _instance) {
+        instance = _instance;
         // Application info
         VkApplicationInfo appInfo;
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -37,12 +39,6 @@ private:
         if (vkCreateInstance(&createInfo, nullptr, instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
-    }
-
-public:
-    void run(VkInstance* _instance) {
-        instance = _instance;
-        createInstance();
     }
 
     void destroyInstance() {
