@@ -1,11 +1,10 @@
-#include "draw/vulkan.hpp"
+#include "draw/draw_manager.hpp"
 #include <iostream>
-using namespace std;
 
 int main() {
-    Vulkan vulkan;
+    DrawManager drawManager;
     try {
-        vulkan.run();
+        drawManager.run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;

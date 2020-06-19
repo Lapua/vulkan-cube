@@ -1,30 +1,35 @@
-#ifndef VULKAN_CUBE_VULKAN_HPP
-#define VULKAN_CUBE_VULKAN_HPP
+#ifndef VULKAN_CUBE_DRAW_MANAGER_HPP
+#define VULKAN_CUBE_DRAW_MANAGER_HPP
 
 #define GLFW_INCLUDE_VULKAN
 
 #include "instance.hpp"
 #include "device_queue.hpp"
+#include "presentation.hpp"
 #include <GLFW/glfw3.h>
 
-class Vulkan {
+class DrawManager {
 private:
     const uint32_t WIDTH = 800;
     const uint32_t HEIGHT = 600;
 
     GLFWwindow* window;
     VkInstance instance;
+    VkSurfaceKHR surface;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
     VkQueue graphicsQueue;
+    VkQueue presentQueue;
 
-    Instance iCreatInstance;
-    DeviceQueue iPhysicalDevice;
+    Instance creatInstance;
+    DeviceQueue deviceQueue;
+    Presentation presentaition;
 
     void initVulkan() {
         initWindow();
-        iCreatInstance.createInstance(&instance);
-        iPhysicalDevice.run(&physicalDevice, &instance);
+        creatInstance.createInstance(&instance);
+        presentaition.createSurface(window, &instance, &surface);
+        deviceQueue.run(&physicalDevice, &presentQueue, &instance, &device, &graphicsQueue, &surface);
     }
 
     void initWindow() {
@@ -43,7 +48,9 @@ private:
     }
 
     void cleanUp() {
-        iCreatInstance.destroyInstance();
+        deviceQueue.destroy();
+        presentaition.destroySurface();
+        creatInstance.destroyInstance();
         glfwDestroyWindow(window);
         glfwTerminate();
     }
@@ -56,4 +63,4 @@ public:
     }
 };
 
-#endif //VULKAN_CUBE_VULKAN_HPP
+#endif //VULKAN_CUBE_DRAW_MANAGER_HPP

@@ -1,24 +1,26 @@
-#ifndef VULKAN_CUBE_QUEUEFAMILIES_HPP
-#define VULKAN_CUBE_QUEUEFAMILIES_HPP
+#ifndef VULKAN_CUBE_QUEUE_FAMILIES_HPP
+#define VULKAN_CUBE_QUEUE_FAMILIES_HPP
 
 #define GLFW_INCLUDE_VULKAN
 
-#include "../debugger.hpp"
+#include "debugger.hpp"
 #include <GLFW/glfw3.h>
 #include <optional>
 #include <vector>
+#include <set>
 
 // 0とnullを区別するために、optionalを使用する
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
 
     bool isComplete() {
-        return graphicsFamily.has_value();
+        return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };
 
 // findQueueFamiliesは様々なところから呼び出されるため、PhysicalDeviceとは分離
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice* device) {
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice* device, VkSurfaceKHR* surface) {
     QueueFamilyIndices indices;
 
     // QueueFamilyの取得
@@ -33,6 +35,14 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice* device) {
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
         }
+
+        // window surfaceがサポートしているかを確認
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(*device, i, *surface, &presentSupport);
+        if (presentSupport) {
+            indices.presentFamily = i;
+        }
+
         if (indices.isComplete()) {
             break;
         }
@@ -42,4 +52,4 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice* device) {
     return indices;
 }
 
-#endif //VULKAN_CUBE_QUEUEFAMILIES_HPP
+#endif //VULKAN_CUBE_QUEUE_FAMILIES_HPP
