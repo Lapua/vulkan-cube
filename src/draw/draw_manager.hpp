@@ -3,6 +3,8 @@
 
 #define GLFW_INCLUDE_VULKAN
 
+#include "debugger.hpp"
+#include "common.hpp"
 #include "instance.hpp"
 #include "device_queue.hpp"
 #include "presentation.hpp"
@@ -10,26 +12,18 @@
 
 class DrawManager {
 private:
-    const uint32_t WIDTH = 800;
-    const uint32_t HEIGHT = 600;
-
-    GLFWwindow* window;
-    VkInstance instance;
-    VkSurfaceKHR surface;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device;
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
+    Instances instances;
 
     Instance creatInstance;
     DeviceQueue deviceQueue;
-    Presentation presentaition;
+    Presentation presentation;
 
     void initVulkan() {
         initWindow();
-        creatInstance.createInstance(&instance);
-        presentaition.createSurface(window, &instance, &surface);
-        deviceQueue.run(&physicalDevice, &presentQueue, &instance, &device, &graphicsQueue, &surface);
+        creatInstance.createInstance(&instances);
+        presentation.createSurface(&instances);
+        deviceQueue.create(&instances);
+        presentation.createSwapChain();
     }
 
     void initWindow() {
@@ -38,20 +32,21 @@ private:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        instances.window = glfwCreateWindow(instances.WIDTH, instances.HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
     void mainLoop() {
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(instances.window)) {
             glfwPollEvents();
         }
     }
 
     void cleanUp() {
+        presentation.destroySwapChain();
         deviceQueue.destroy();
-        presentaition.destroySurface();
+        presentation.destroySurface();
         creatInstance.destroyInstance();
-        glfwDestroyWindow(window);
+        glfwDestroyWindow(instances.window);
         glfwTerminate();
     }
 

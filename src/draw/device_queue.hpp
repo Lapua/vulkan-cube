@@ -3,50 +3,45 @@
 
 #define GLFW_INCLUDE_VULKAN
 
-#include "queue_families.hpp"
+#include "common.hpp"
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <set>
 
 class DeviceQueue {
 private:
-    VkInstance* instance;
-    VkSurfaceKHR* surface;
-    VkPhysicalDevice* physicalDevice;
-    VkDevice* device;
-    VkQueue* graphicsQueue;
-    VkQueue* presentQueue;
+    Instances* instances;
 
     // 物理デバイスの選択
     void pickPhysicalDevice() {
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(*instance, &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(instances->instance, &deviceCount, nullptr);
         if (deviceCount == 0) {
             throw std::runtime_error("failed to find GPUs with vulkan support");
         }
         std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(*instance, &deviceCount, devices.data());
+        vkEnumeratePhysicalDevices(instances->instance, &deviceCount, devices.data());
 
-        for (auto& device : devices) {
-            if (isDeviceSuitable(&device)) {
-                *physicalDevice = device;
+        for (const auto& device : devices) {
+            if (isDeviceSuitable(device)) {
+                instances->physicalDevice = device;
                 break;
             }
         }
-        if (physicalDevice == VK_NULL_HANDLE) {
+        if (instances->physicalDevice == VK_NULL_HANDLE) {
             throw std::runtime_error("failed to find suitable GPU");
         }
     }
 
-    bool isDeviceSuitable(VkPhysicalDevice* _device) {
-        QueueFamilyIndices indices = findQueueFamilies(_device, surface);
+    bool isDeviceSuitable(VkPhysicalDevice _device) {
+        QueueFamilyIndices indices = findQueueFamilies(_device, instances->surface);
 
         return indices.isComplete();
     }
 
     // 論理デバイスの作成
     void createLogicalDevice() {
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+        QueueFamilyIndices indices = findQueueFamilies(instances->physicalDevice, instances->surface);
 
         // 描画するgraphicQueueとwindow surface用のqueue2つを作る
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
@@ -72,28 +67,23 @@ private:
         createInfo.pEnabledFeatures = &deviceFeatures;
 
         // 論理デバイス - 拡張周りの設定
-        createInfo.enabledExtensionCount = 0;
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
         // 検証レイヤーを挟むなら, 正しい設定にしてください
         createInfo.enabledLayerCount = 0;
 
-        if (vkCreateDevice(*physicalDevice, &createInfo, nullptr, device) != VK_SUCCESS) {
+        if (vkCreateDevice(instances->physicalDevice, &createInfo, nullptr, &instances->device) != VK_SUCCESS) {
             throw std::runtime_error("failed to create logical device!");
         }
 
-        vkGetDeviceQueue(*device, indices.graphicsFamily.value(), 0, graphicsQueue);
-        vkGetDeviceQueue(*device, indices.presentFamily.value(), 0, presentQueue);
+        vkGetDeviceQueue(instances->device, indices.graphicsFamily.value(), 0, &instances->graphicsQueue);
+        vkGetDeviceQueue(instances->device, indices.presentFamily.value(), 0, &instances->presentQueue);
     }
 
 public:
-    void run(VkPhysicalDevice* _physicalDevice, VkQueue* _presentQueue, VkInstance* _instance,
-        VkDevice* _device, VkQueue* _graphicsQueue, VkSurfaceKHR* _surface)
+    void create(Instances* _instances)
     {
-        instance = _instance;
-        physicalDevice = _physicalDevice;
-        device = _device;
-        graphicsQueue = _graphicsQueue;
-        presentQueue = _presentQueue;
-        surface = _surface;
+        instances = _instances;
 
         pickPhysicalDevice();
         createLogicalDevice();
@@ -101,7 +91,7 @@ public:
 
     void destroy() {
         // 物理デバイスはVkInstanceと一緒に暗黙的に破棄
-        vkDestroyDevice(*device, nullptr);
+        vkDestroyDevice(instances->device, nullptr);
     }
 };
 

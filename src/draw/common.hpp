@@ -1,5 +1,5 @@
-#ifndef VULKAN_CUBE_QUEUE_FAMILIES_HPP
-#define VULKAN_CUBE_QUEUE_FAMILIES_HPP
+#ifndef VULKAN_CUBE_COMMON_HPP
+#define VULKAN_CUBE_COMMON_HPP
 
 #define GLFW_INCLUDE_VULKAN
 
@@ -9,6 +9,24 @@
 #include <vector>
 #include <set>
 
+typedef struct Instances {
+    const uint32_t WIDTH = 800;
+    const uint32_t HEIGHT = 600;
+
+    GLFWwindow* window;
+    VkInstance instance;
+    VkSurfaceKHR surface;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device;
+    VkQueue graphicsQueue;
+    VkQueue presentQueue;
+    VkSwapchainKHR swapChain;
+    std::vector<VkImage> swapChainImages;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
+}Instances;
+
+/*** Queue Familis ***/
 // 0とnullを区別するために、optionalを使用する
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
@@ -19,15 +37,19 @@ struct QueueFamilyIndices {
     }
 };
 
+const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
 // findQueueFamiliesは様々なところから呼び出されるため、PhysicalDeviceとは分離
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice* device, VkSurfaceKHR* surface) {
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
     QueueFamilyIndices indices;
 
     // QueueFamilyの取得
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(*device, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(*device, &queueFamilyCount, queueFamilies.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies) {
@@ -38,7 +60,7 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice* device, VkSurfaceKHR* sur
 
         // window surfaceがサポートしているかを確認
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(*device, i, *surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
         if (presentSupport) {
             indices.presentFamily = i;
         }
@@ -52,4 +74,4 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice* device, VkSurfaceKHR* sur
     return indices;
 }
 
-#endif //VULKAN_CUBE_QUEUE_FAMILIES_HPP
+#endif //VULKAN_CUBE_COMMON_HPP

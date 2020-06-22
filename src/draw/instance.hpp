@@ -3,16 +3,18 @@
 
 #define GLFW_INCLUDE_VULKAN
 
+#include "common.hpp"
 #include <GLFW/glfw3.h>
 #include <iostream>
 
 class Instance {
 private:
-    VkInstance* instance;
+    Instances* instances;
 
 public:
-    void createInstance(VkInstance* _instance) {
-        instance = _instance;
+    void createInstance(Instances* _instances) {
+        instances = _instances;
+
         // Application info
         VkApplicationInfo appInfo;
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -36,13 +38,13 @@ public:
         // 有効にするグローバル検証レイヤー
         createInfo.enabledLayerCount = 0;
 
-        if (vkCreateInstance(&createInfo, nullptr, instance) != VK_SUCCESS) {
+        if (vkCreateInstance(&createInfo, nullptr, &instances->instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
     }
 
     void destroyInstance() {
-        vkDestroyInstance(*instance, nullptr);
+        vkDestroyInstance(instances->instance, nullptr);
     }
 };
 
