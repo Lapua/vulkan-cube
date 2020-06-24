@@ -9,7 +9,7 @@ set(ENV{glfw3_DIR} /usr/local/Cellar/glfw/HEAD-d7ae90a/lib/cmake/glfw3)
 
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
-add_executable(vulkan_cube src/main.cpp src/draw/draw_manager.hpp src/draw/instance.hpp src/draw/device_queue.hpp src/draw/debugger.hpp src/draw/common.hpp src/draw/presentation.hpp)
+add_executable(vulkan_cube src/main.cpp src/draw/DrawManager.hpp src/draw/Instance.hpp src/draw/DeviceQueue.hpp src/draw/Debugger.hpp src/draw/Common.hpp src/draw/Presentation.hpp src/draw/GraphicsPipeline.hpp src/draw/Draw.hpp)
 
 find_package(glfw3 3.3 REQUIRED)
 target_link_libraries(${PROJECT_NAME} glfw)

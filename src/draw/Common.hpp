@@ -3,7 +3,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 
-#include "debugger.hpp"
+#include "Debugger.hpp"
 #include <GLFW/glfw3.h>
 #include <optional>
 #include <vector>
@@ -24,6 +24,15 @@ typedef struct Instances {
     std::vector<VkImage> swapChainImages;
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
+    std::vector<VkImageView> swapChainImageViews;
+    VkRenderPass renderPass;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline graphicsPipeline;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
+    VkCommandPool commandPool;
+    std::vector<VkCommandBuffer> commandBuffers;
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderFinishedSemaphore;
 }Instances;
 
 /*** Queue Familis ***/

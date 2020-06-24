@@ -1,9 +1,9 @@
-#ifndef VULKAN_CUBE_DEVICE_QUEUE_HPP
-#define VULKAN_CUBE_DEVICE_QUEUE_HPP
+#ifndef VULKAN_CUBE_DEVICEQUEUE_HPP
+#define VULKAN_CUBE_DEVICEQUEUE_HPP
 
 #define GLFW_INCLUDE_VULKAN
 
-#include "common.hpp"
+#include "Common.hpp"
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <set>
@@ -96,4 +96,4 @@ public:
 };
 
 
-#endif //VULKAN_CUBE_DEVICE_QUEUE_HPP
+#endif //VULKAN_CUBE_DEVICEQUEUE_HPP
