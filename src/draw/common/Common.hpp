@@ -3,7 +3,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 
-#include "Debugger.hpp"
+#include "../Debugger.hpp"
 #include <GLFW/glfw3.h>
 #include <optional>
 #include <vector>
@@ -33,6 +33,8 @@ typedef struct Instances {
     std::vector<VkCommandBuffer> commandBuffers;
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderFinishedSemaphore;
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
 }Instances;
 
 /*** Queue Familis ***/

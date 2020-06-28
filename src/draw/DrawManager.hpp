@@ -3,7 +3,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 
-#include "Common.hpp"
+#include "common/Common.hpp"
 #include "Instance.hpp"
 #include "DeviceQueue.hpp"
 #include "Presentation.hpp"
