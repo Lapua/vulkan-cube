@@ -142,6 +142,27 @@ private:
         vkFreeCommandBuffers(instances->device, instances->commandPool, 1, &commandBuffer);
     }
 
+    void createIndexBuffer() {
+        VkDeviceSize bufferSize = sizeof(gIndices[0]) * gIndices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(instances->device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, gIndices.data(), (size_t) bufferSize);
+        vkUnmapMemory(instances->device, stagingBufferMemory);
+
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, instances->indexBuffer, instances->indexBufferMemory);
+        copyBuffer(stagingBuffer, instances->indexBuffer, bufferSize);
+
+        vkDestroyBuffer(instances->device, stagingBuffer, nullptr);
+        vkFreeMemory(instances->device, stagingBufferMemory, nullptr);
+    }
+
     void createCommandBuffers() {
         instances->commandBuffers.resize(instances->swapChainFramebuffers.size());
 
@@ -181,8 +202,10 @@ private:
             VkBuffer vertexBuffers[] = {instances->vertexBuffer};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(instances->commandBuffers[i], 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(instances->commandBuffers[i], instances->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-            vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(gVertices.size()), 1, 0, 0);
+//            vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(gVertices.size()), 1, 0, 0);
+            vkCmdDrawIndexed(instances->commandBuffers[i], static_cast<uint32_t>(gIndices.size()), 1, 0, 0, 0);
 
             vkCmdEndRenderPass(instances->commandBuffers[i]);
 
@@ -209,6 +232,7 @@ public:
         createFramebuffers();
         createCommandPool();
         createVertexBuffer();
+        createIndexBuffer();
         createCommandBuffers();
         createSemaphors();
     }
@@ -216,6 +240,9 @@ public:
     void destroy() {
         vkDestroyBuffer(instances->device, instances->vertexBuffer, nullptr);
         vkFreeMemory(instances->device, instances->vertexBufferMemory, nullptr);
+        vkDestroyBuffer(instances->device, instances->indexBuffer, nullptr);
+        vkFreeMemory(instances->device, instances->indexBufferMemory, nullptr);
+
         vkDestroySemaphore(instances->device, instances->renderFinishedSemaphore, nullptr);
         vkDestroySemaphore(instances->device, instances->imageAvailableSemaphore, nullptr);
         vkDestroyCommandPool(instances->device, instances->commandPool, nullptr);

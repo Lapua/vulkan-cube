@@ -35,6 +35,8 @@ typedef struct Instances {
     VkSemaphore renderFinishedSemaphore;
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
 }Instances;
 
 /*** Queue Familis ***/
