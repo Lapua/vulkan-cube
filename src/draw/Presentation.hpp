@@ -127,26 +127,11 @@ private:
     void createImageView() {
         instances->swapChainImageViews.resize(instances->swapChainImages.size());
         for (size_t i = 0; i < instances->swapChainImages.size(); i++) {
-            VkImageViewCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            createInfo.image = instances->swapChainImages[i];
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            createInfo.format = instances->swapChainImageFormat;
-            createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            createInfo.subresourceRange.baseMipLevel = 0;
-            createInfo.subresourceRange.levelCount = 1;
-            createInfo.subresourceRange.baseArrayLayer = 0;
-            createInfo.subresourceRange.layerCount = 1;
-
-            if (vkCreateImageView(instances->device, &createInfo, nullptr, &instances->swapChainImageViews[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create image views");
-            }
+            instances->swapChainImageViews[i] = gCreateImageView(instances, instances->swapChainImages[i], instances->swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
         }
     }
+
+
 
 public:
     void createSurface(Instances* _instances) {
