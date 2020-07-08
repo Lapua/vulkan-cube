@@ -48,4 +48,10 @@ const std::vector<uint16_t> gIndices = {
     0, 1, 2, 2, 3, 0
 };
 
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 #endif //VULKAN_CUBE_VERTEX_HPP

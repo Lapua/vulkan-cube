@@ -57,6 +57,24 @@ private:
         }
     }
 
+    void createDescriptorSetLayout() {
+        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        uboLayoutBinding.binding = 0;
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.pImmutableSamplers = nullptr;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &uboLayoutBinding;
+
+        if (vkCreateDescriptorSetLayout(instances->device, &layoutInfo, nullptr, &instances->descriptorSetLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor set layout");
+        }
+    }
+
     void createGraphicsPipeline() {
         // shaderを作成する
         auto vertShaderCode = readFile("shaders/vert.spv");
@@ -123,7 +141,7 @@ private:
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
         VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -148,8 +166,8 @@ private:
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 0;
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.pSetLayouts = &instances->descriptorSetLayout;
 
         if (vkCreatePipelineLayout(instances->device, &pipelineLayoutInfo, nullptr, &instances->pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout");
@@ -212,10 +230,12 @@ public:
     void create(Instances* _instances) {
         instances = _instances;
         createRenderPass();
+        createDescriptorSetLayout();
         createGraphicsPipeline();
     }
 
     void destroy() {
+        vkDestroyDescriptorSetLayout(instances->device, instances->descriptorSetLayout, nullptr);
         vkDestroyPipeline(instances->device, instances->graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(instances->device, instances->pipelineLayout, nullptr);
         vkDestroyRenderPass(instances->device, instances->renderPass, nullptr);

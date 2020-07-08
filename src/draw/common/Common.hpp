@@ -3,7 +3,6 @@
 
 #define GLFW_INCLUDE_VULKAN
 
-#include "../Debugger.hpp"
 #include <GLFW/glfw3.h>
 #include <optional>
 #include <vector>
@@ -12,8 +11,10 @@
 typedef struct Instances {
     const uint32_t WIDTH = 800;
     const uint32_t HEIGHT = 600;
+    const int MAX_FRAME_IN_FLIGHT = 2;
 
     GLFWwindow* window;
+    VkDebugUtilsMessengerEXT debugMessenger;
     VkInstance instance;
     VkSurfaceKHR surface;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -26,17 +27,26 @@ typedef struct Instances {
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
     VkRenderPass renderPass;
+    VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
+    std::vector<VkFramebuffer> swapChainFrameBuffers;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    std::vector<VkFence> imagesInFlight;
+    size_t currentFrame = 0;
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
+
 }Instances;
 
 /*** Queue Familis ***/
@@ -53,6 +63,12 @@ struct QueueFamilyIndices {
 const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
+
+const std::vector<const char*> gValidationLayers = {
+    "VK_LAYER_KHRONOS_validation"
+};
+
+const bool gEnableValidationLayers = true;
 
 // findQueueFamiliesは様々なところから呼び出されるため、PhysicalDeviceとは分離
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {

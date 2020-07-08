@@ -13,7 +13,7 @@ private:
     Instances* instances;
 
     void createFramebuffers() {
-        instances->swapChainFramebuffers.resize(instances->swapChainImages.size());
+        instances->swapChainFrameBuffers.resize(instances->swapChainImages.size());
 
         for (size_t i = 0; i < instances->swapChainImageViews.size(); i++) {
             VkImageView attachments[] = {
@@ -29,7 +29,7 @@ private:
             framebufferInfo.height = instances->swapChainExtent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(instances->device, &framebufferInfo, nullptr, &instances->swapChainFramebuffers[i]) != VK_SUCCESS) {
+            if (vkCreateFramebuffer(instances->device, &framebufferInfo, nullptr, &instances->swapChainFrameBuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create framebuffer!");
             }
         }
@@ -119,7 +119,7 @@ private:
         VkCommandBuffer commandBuffer;
         vkAllocateCommandBuffers(instances->device, &allocateInfo, &commandBuffer);
 
-        VkCommandBufferBeginInfo beginInfo;
+        VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
@@ -163,8 +163,68 @@ private:
         vkFreeMemory(instances->device, stagingBufferMemory, nullptr);
     }
 
+    void createUniformBuffers() {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        instances->uniformBuffers.resize(instances->swapChainImages.size());
+        instances->uniformBuffersMemory.resize(instances->swapChainImages.size());
+
+        for (size_t i = 0; i < instances->swapChainImages.size(); i++) {
+            createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, instances->uniformBuffers[i], instances->uniformBuffersMemory[i]);
+        }
+    }
+
+    void createDescriptorPool() {
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = static_cast<uint32_t>(instances->swapChainImages.size());
+
+        VkDescriptorPoolCreateInfo poolCreateInfo{};
+        poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolCreateInfo.poolSizeCount = 1;
+        poolCreateInfo.pPoolSizes = &poolSize;
+        poolCreateInfo.maxSets = static_cast<uint32_t>(instances->swapChainImages.size());
+
+        if (vkCreateDescriptorPool(instances->device, &poolCreateInfo, nullptr, &instances->descriptorPool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor pool");
+        }
+    }
+
+    void createDescriptorSets() {
+        std::vector<VkDescriptorSetLayout> layouts(instances->swapChainImages.size(), instances->descriptorSetLayout);
+        VkDescriptorSetAllocateInfo allocateInfo{};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocateInfo.descriptorPool = instances->descriptorPool;
+        allocateInfo.descriptorSetCount = static_cast<uint32_t>(instances->swapChainImages.size());
+        allocateInfo.pSetLayouts = layouts.data();
+
+        instances->descriptorSets.resize(instances->swapChainImages.size());
+        if (vkAllocateDescriptorSets(instances->device, &allocateInfo, instances->descriptorSets.data()) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate descriptor sets");
+        }
+
+        for (size_t i = 0; i < instances->swapChainImages.size(); i++) {
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = instances->uniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = instances->descriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            vkUpdateDescriptorSets(instances->device, 1, &descriptorWrite, 0, nullptr);
+        }
+    }
+
     void createCommandBuffers() {
-        instances->commandBuffers.resize(instances->swapChainFramebuffers.size());
+        instances->commandBuffers.resize(instances->swapChainFrameBuffers.size());
 
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -187,7 +247,7 @@ private:
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderPassInfo.renderPass = instances->renderPass;
-            renderPassInfo.framebuffer = instances->swapChainFramebuffers[i];
+            renderPassInfo.framebuffer = instances->swapChainFrameBuffers[i];
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = instances->swapChainExtent;
 
@@ -204,6 +264,8 @@ private:
             vkCmdBindVertexBuffers(instances->commandBuffers[i], 0, 1, vertexBuffers, offsets);
             vkCmdBindIndexBuffer(instances->commandBuffers[i], instances->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
+            vkCmdBindDescriptorSets(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->pipelineLayout,
+                0, 1, &instances->descriptorSets[i], 0, nullptr);
 //            vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(gVertices.size()), 1, 0, 0);
             vkCmdDrawIndexed(instances->commandBuffers[i], static_cast<uint32_t>(gIndices.size()), 1, 0, 0, 0);
 
@@ -215,14 +277,28 @@ private:
         }
     }
 
-    void createSemaphors() {
+    void createSyncObjects() {
+        instances->imageAvailableSemaphores.resize(instances->MAX_FRAME_IN_FLIGHT);
+        instances->renderFinishedSemaphores.resize(instances->MAX_FRAME_IN_FLIGHT);
+        instances->inFlightFences.resize(instances->MAX_FRAME_IN_FLIGHT);
+        instances->imagesInFlight.resize(instances->swapChainImages.size(), VK_NULL_HANDLE);
+
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        if (vkCreateSemaphore(instances->device, &semaphoreInfo, nullptr, &instances->imageAvailableSemaphore) != VK_SUCCESS ||
-            vkCreateSemaphore(instances->device, &semaphoreInfo, nullptr, &instances->renderFinishedSemaphore) != VK_SUCCESS) {
+        VkFenceCreateInfo fenceCreateInfo{};
+        fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-            throw std::runtime_error("failed to create semaphores!");
+        for (size_t i = 0; i < instances->MAX_FRAME_IN_FLIGHT; i++) {
+            if (vkCreateSemaphore(instances->device, &semaphoreInfo, nullptr, &instances->imageAvailableSemaphores[i]) !=
+                VK_SUCCESS ||
+                vkCreateSemaphore(instances->device, &semaphoreInfo, nullptr, &instances->renderFinishedSemaphores[i]) !=
+                VK_SUCCESS ||
+                vkCreateFence(instances->device, &fenceCreateInfo, nullptr, &instances->inFlightFences[i]) != VK_SUCCESS) {
+
+                throw std::runtime_error("failed to create synchronization objects for frame!");
+            }
         }
     }
 
@@ -233,23 +309,37 @@ public:
         createCommandPool();
         createVertexBuffer();
         createIndexBuffer();
+        createUniformBuffers();
+        createDescriptorPool();
+        createDescriptorSets();
         createCommandBuffers();
-        createSemaphors();
+        createSyncObjects();
     }
 
     void destroy() {
-        vkDestroyBuffer(instances->device, instances->vertexBuffer, nullptr);
-        vkFreeMemory(instances->device, instances->vertexBufferMemory, nullptr);
+        // cleanup swapchain
+        for (auto framebuffer : instances->swapChainFrameBuffers) {
+            vkDestroyFramebuffer(instances->device, framebuffer, nullptr);
+        }
+        vkFreeCommandBuffers(instances->device, instances->commandPool, static_cast<uint32_t>(instances->commandBuffers.size()), instances->commandBuffers.data());
+        for (size_t i = 0; i < instances->swapChainImages.size(); i++) {
+            vkDestroyBuffer(instances->device, instances->uniformBuffers[i], nullptr);
+            vkFreeMemory(instances->device, instances->uniformBuffersMemory[i], nullptr);
+        }
+        vkDestroyDescriptorPool(instances->device, instances->descriptorPool, nullptr);
+
         vkDestroyBuffer(instances->device, instances->indexBuffer, nullptr);
         vkFreeMemory(instances->device, instances->indexBufferMemory, nullptr);
 
-        vkDestroySemaphore(instances->device, instances->renderFinishedSemaphore, nullptr);
-        vkDestroySemaphore(instances->device, instances->imageAvailableSemaphore, nullptr);
-        vkDestroyCommandPool(instances->device, instances->commandPool, nullptr);
-        for (auto framebuffer : instances->swapChainFramebuffers) {
-            vkDestroyFramebuffer(instances->device, framebuffer, nullptr);
-        }
         vkDestroyBuffer(instances->device, instances->vertexBuffer, nullptr);
+        vkFreeMemory(instances->device, instances->vertexBufferMemory, nullptr);
+
+        for (size_t i =0; i < instances->MAX_FRAME_IN_FLIGHT; i++) {
+            vkDestroySemaphore(instances->device, instances->renderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(instances->device, instances->imageAvailableSemaphores[i], nullptr);
+            vkDestroyFence(instances->device, instances->inFlightFences[i], nullptr);
+        }
+        vkDestroyCommandPool(instances->device, instances->commandPool, nullptr);
     }
 };
 

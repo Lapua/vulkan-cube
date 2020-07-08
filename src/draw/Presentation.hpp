@@ -156,10 +156,6 @@ public:
         }
     }
 
-    void destroySurface() {
-        vkDestroySurfaceKHR(instances->instance, instances->surface, nullptr);
-    }
-
     void create() {
         createSwapChain();
         createImageView();
@@ -170,6 +166,10 @@ public:
             vkDestroyImageView(instances->device, imageView, nullptr);
         }
         vkDestroySwapchainKHR(instances->device, instances->swapChain, nullptr);
+    }
+
+    void destroySurface() {
+        vkDestroySurfaceKHR(instances->instance, instances->surface, nullptr);
     }
 };
 
