@@ -159,4 +159,80 @@ VkFormat gFindDepthFormat(Instances* instances) {
     );
 }
 
+uint32_t gFindMemoryType(Instances* instances, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(instances->physicalDevice, &memoryProperties);
+
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+        if (typeFilter & (1 << i) &&
+            (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+        {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("failed to find suitable memory type");
+}
+
+void gCreateBuffer(Instances* instances, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+                  VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.usage = usage;
+
+    if (vkCreateBuffer(instances->device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create vertex buffer");
+    }
+
+    // メモリ割当
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(instances->device, buffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.allocationSize = memRequirements.size;
+    allocateInfo.memoryTypeIndex = gFindMemoryType(instances, memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(instances->device, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory");
+    }
+    vkBindBufferMemory(instances->device, buffer, bufferMemory, 0);
+}
+
+void gCopyBuffer(Instances* instances, VkBuffer srcBuffer ,VkBuffer dstBuffer, VkDeviceSize size) {
+    VkCommandBufferAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandPool = instances->commandPool;
+    allocateInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(instances->device, &allocateInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion{};
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(instances->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(instances->graphicsQueue);
+
+    vkFreeCommandBuffers(instances->device, instances->commandPool, 1, &commandBuffer);
+}
+
 #endif //VULKAN_CUBE_COMMON_HPP
