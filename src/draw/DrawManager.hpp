@@ -12,7 +12,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
+#include <string>
 #include <cstdint>
+#include <cmath>
 
 class DrawManager {
 private:
@@ -23,6 +25,7 @@ private:
     Presentation presentation;
     GraphicsPipeline graphicsPipeline;
     Draw draw;
+    std::ifstream::pos_type beg;
 
     void initVulkan() {
         initWindow();
@@ -32,6 +35,7 @@ private:
         presentation.create();
         graphicsPipeline.create(&instances);
         draw.run(&instances);
+        readVertexFile();
     }
 
     void initWindow() {
@@ -41,8 +45,13 @@ private:
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         instances.window = glfwCreateWindow(instances.WIDTH, instances.HEIGHT, "Vulkan", nullptr, nullptr);
+    }
 
-
+    void readVertexFile() {
+        std::ifstream file("shaders/golf.trc");
+        if (file.fail()) {
+            throw std::runtime_error("failed to open vertex file");
+        }
     }
 
     void mainLoop() {
@@ -106,9 +115,13 @@ private:
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
+//        updateVertex(time);
+
+        float scale = sin(time*2) * 0.5 + 1.5;
         UniformBufferObject ubo{};
-//        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model =  glm::scale(ubo.model, glm::vec3(scale, scale, scale));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 1.5f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), instances.swapChainExtent.width / (float) instances.swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;   //glmはopenGL用なのでY軸反転する
 
@@ -116,10 +129,20 @@ private:
         vkMapMemory(instances.device, instances.uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(instances.device, instances.uniformBuffersMemory[currentImage]);
+    }
 
+    void updateVertex(float time) {
+//        std::ifstream file("shaders/golf.trc");
+//        std::string buffer;
+//        file.seekg(beg, std::ios_base::beg);
+//        if (std::getline(file, buffer)) {
+//            std::cout << buffer << std::endl;
+//            beg = file.tellg();
+//        }
         const std::vector<Vertex> vert = {
             {{-0.5f * time, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}}
+            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{0.4f, -0.4f, 0.0f}, {0.0f, 0.0f, 1.0f}}
         };
 
         VkDeviceSize bufferSize = sizeof(gVertices[0]) * gVertices.size();
