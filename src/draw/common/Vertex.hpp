@@ -52,6 +52,8 @@ const std::vector<uint16_t> gIndices = {
     0, 4, 1, 0, 1, 4
 };
 
+std::vector<glm::mat4> gRotatingVertices;
+
 struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
