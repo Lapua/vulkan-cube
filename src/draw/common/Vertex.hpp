@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 #include <array>
+#include <vector>
+#include <vulkan/vulkan.h>
 
 struct Vertex {
     glm::vec3 pos;
@@ -46,10 +48,11 @@ const std::vector<Vertex> gVertices = {
 };
 
 const std::vector<uint16_t> gIndices = {
-    0, 1, 2, 0, 2, 1,
-    0, 2, 3, 0, 3, 2,
-    0, 3, 4, 0, 4, 3,
-    0, 4, 1, 0, 1, 4
+//    0, 1, 2, 0, 2, 1,
+//    0, 2, 3, 0, 3, 2,
+//    0, 3, 4, 0, 4, 3,
+//    0, 4, 1, 0, 1, 4
+    0, 1, 2, 3, 4
 };
 
 std::vector<glm::mat4> gRotatingVertices;

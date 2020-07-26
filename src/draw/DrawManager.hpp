@@ -25,7 +25,6 @@ private:
     Presentation presentation;
     GraphicsPipeline graphicsPipeline;
     Draw draw;
-    std::ifstream::pos_type beg;
     const int dividing = 180;
 
     void initVulkan() {
@@ -36,7 +35,6 @@ private:
         presentation.create();
         graphicsPipeline.create(&instances);
         draw.run(&instances);
-        calcRotatingVertices();
         readVertexFile();
     }
 
@@ -54,15 +52,14 @@ private:
         if (file.fail()) {
             throw std::runtime_error("failed to open vertex file");
         }
-    }
 
-    void calcRotatingVertices() {
-        for (int i = 0; i < dividing; i++) {
-            float degree = 360.0f / dividing * i;
-            glm::mat4 matrix = (glm::rotate(glm::mat4(1.0f), glm::radians(degree), glm::vec3(0.0f, 0.0f, 1.0f)));
-            float scale = sin(glm::radians(degree)) * 0.5 + 1.5;
-            matrix = glm::scale(matrix, glm::vec3(scale, scale, scale));
-            gRotatingVertices.push_back(matrix);
+        std::string buffer;
+        for (int i = 0; i < 6; i++) {
+            getline(file, buffer);
+        }
+
+        if (std::getline(file, buffer)) {
+            std::cout << buffer << std::endl;
         }
     }
 
@@ -125,13 +122,10 @@ private:
         static int vertexIndex = 0;
 
         UniformBufferObject ubo{};
-        ubo.model =  gRotatingVertices.at(vertexIndex);
+        ubo.model =  glm::mat4(1.0f);
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 1.5f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), instances.swapChainExtent.width / (float) instances.swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;   //glmはopenGL用なのでY軸反転する
-        if (++vertexIndex >= dividing) {
-            vertexIndex = 0;
-        }
 
         void* data;
         vkMapMemory(instances.device, instances.uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
@@ -140,13 +134,6 @@ private:
     }
 
     void updateVertex(float time) {
-//        std::ifstream file("shaders/golf.trc");
-//        std::string buffer;
-//        file.seekg(beg, std::ios_base::beg);
-//        if (std::getline(file, buffer)) {
-//            std::cout << buffer << std::endl;
-//            beg = file.tellg();
-//        }
         const std::vector<Vertex> vert = {
             {{-0.5f * time, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
             {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},

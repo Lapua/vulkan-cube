@@ -3,6 +3,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 
+#include "Vertex.hpp"
 #include <GLFW/glfw3.h>
 #include <optional>
 #include <vector>
@@ -59,6 +60,8 @@ typedef struct Instances {
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
+
+    std::vector<std::vector<Vertex>> vertices;
 }Instances;
 
 /*** Queue Familis ***/
