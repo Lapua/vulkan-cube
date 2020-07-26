@@ -62,6 +62,7 @@ typedef struct Instances {
     VkImageView depthImageView;
 
     std::vector<std::vector<Vertex>> vertices;
+    std::vector<uint16_t> gIndices;
 }Instances;
 
 /*** Queue Familis ***/

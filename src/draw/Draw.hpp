@@ -96,7 +96,7 @@ private:
     }
 
     void createVertexBuffer() {
-        VkDeviceSize bufferSize = sizeof(gVertices[0]) * gVertices.size();
+        VkDeviceSize bufferSize = sizeof(instances->vertices[0][0]) * instances->vertices[0].size();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -104,7 +104,7 @@ private:
 
         void* data;
         vkMapMemory(instances->device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, gVertices.data(), (size_t) bufferSize);
+        memcpy(data, instances->vertices[0].data(), (size_t) bufferSize);
         vkUnmapMemory(instances->device, stagingBufferMemory);
         gCreateBuffer(instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                      instances->vertexBuffer, instances->vertexBufferMemory);
@@ -241,7 +241,7 @@ private:
 
             vkCmdBindDescriptorSets(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->pipelineLayout,
                 0, 1, &instances->descriptorSets[i], 0, nullptr);
-//            vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(gVertices.size()), 1, 0, 0);
+//            vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(tmpVertices.size()), 1, 0, 0);
             vkCmdDrawIndexed(instances->commandBuffers[i], static_cast<uint32_t>(gIndices.size()), 1, 0, 0, 0);
 
             vkCmdEndRenderPass(instances->commandBuffers[i]);

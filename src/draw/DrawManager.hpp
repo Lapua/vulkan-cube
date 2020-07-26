@@ -15,6 +15,10 @@
 #include <string>
 #include <cstdint>
 #include <cmath>
+#include <iostream>
+#include <sstream>
+
+#include <algorithm>
 
 class DrawManager {
 private:
@@ -25,9 +29,9 @@ private:
     Presentation presentation;
     GraphicsPipeline graphicsPipeline;
     Draw draw;
-    const int dividing = 180;
 
     void initVulkan() {
+        readVertexFile();
         initWindow();
         creatInstance.createInstance(&instances);
         presentation.createSurface(&instances);
@@ -35,7 +39,6 @@ private:
         presentation.create();
         graphicsPipeline.create(&instances);
         draw.run(&instances);
-        readVertexFile();
     }
 
     void initWindow() {
@@ -48,6 +51,10 @@ private:
     }
 
     void readVertexFile() {
+        for (int i = 0; i < 57; i++) {
+            gIndices[i] = i;
+        }
+
         std::ifstream file("shaders/golf.trc");
         if (file.fail()) {
             throw std::runtime_error("failed to open vertex file");
@@ -58,11 +65,23 @@ private:
             getline(file, buffer);
         }
 
-        if (std::getline(file, buffer)) {
-            std::cout << buffer << std::endl;
+        while (std::getline(file, buffer)) {
+            std::istringstream iss(buffer);
+            std::string tmp;
+            std::vector<float> data;
+            while (getline(iss, tmp, '\t')) {
+                data.push_back(std::stof(tmp));
+            }
+            data.erase(data.begin(), data.begin() + 2);
+
+            std::vector<Vertex> atTimeVertices(NUM_OF_SENSOR);
+            for (int i = 0; i < NUM_OF_SENSOR; i++) {
+                Vertex vert = {{data[i*3], data[i*3+1], data[i*3+2]}, {1.0f, 1.0f, 1.0f}};
+                atTimeVertices[i] = vert;
+            }
+            instances.vertices.push_back(atTimeVertices);
         }
     }
-
     void mainLoop() {
         while (!glfwWindowShouldClose(instances.window)) {
             glfwPollEvents();
@@ -119,11 +138,11 @@ private:
     }
 
     void updateUniformbuffer(uint32_t currentImage) {
-        static int vertexIndex = 0;
+        updateVertex();
 
         UniformBufferObject ubo{};
-        ubo.model =  glm::mat4(1.0f);
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 1.5f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model =  glm::scale(glm::mat4(1.0f), glm::vec3(0.001f, 0.001f, 0.001f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 0.8f, 1.0f), glm::vec3(0.0f, 0.8f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), instances.swapChainExtent.width / (float) instances.swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;   //glmはopenGL用なのでY軸反転する
 
@@ -133,14 +152,9 @@ private:
         vkUnmapMemory(instances.device, instances.uniformBuffersMemory[currentImage]);
     }
 
-    void updateVertex(float time) {
-        const std::vector<Vertex> vert = {
-            {{-0.5f * time, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-            {{0.4f, -0.4f, 0.0f}, {0.0f, 0.0f, 1.0f}}
-        };
-
-        VkDeviceSize bufferSize = sizeof(gVertices[0]) * gVertices.size();
+    void updateVertex() {
+        static int verticesIndex = 0;
+        VkDeviceSize bufferSize = sizeof(instances.vertices[verticesIndex][0]) * instances.vertices[verticesIndex].size();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -148,11 +162,15 @@ private:
 
         void* vdata;
         vkMapMemory(instances.device, stagingBufferMemory, 0, bufferSize, 0, &vdata);
-        memcpy(vdata, vert.data(), (size_t) bufferSize);
+        memcpy(vdata, instances.vertices[verticesIndex].data(), (size_t) bufferSize);
         vkUnmapMemory(instances.device, stagingBufferMemory);
         gCopyBuffer(&instances, stagingBuffer, instances.vertexBuffer, bufferSize);
         vkDestroyBuffer(instances.device, stagingBuffer, nullptr);
         vkFreeMemory(instances.device, stagingBufferMemory, nullptr);
+
+        if (++verticesIndex >= instances.vertices.size()) {
+            verticesIndex = 0;
+        }
     }
 
     void cleanUp() {

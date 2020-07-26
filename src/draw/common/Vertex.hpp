@@ -3,10 +3,13 @@
 
 #define GLFW_INCLUDE_VULKAN
 
+#include "Common.hpp"
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
 #include <vulkan/vulkan.h>
+
+const int NUM_OF_SENSOR = 57;
 
 struct Vertex {
     glm::vec3 pos;
@@ -39,23 +42,11 @@ struct Vertex {
     }
 };
 
-const std::vector<Vertex> gVertices = {
-    {{0.0f, 0.0f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+const std::vector<Vertex> tmpVertices = {
+    {{0.0f, 0.0f, 0.5f}, {0.0f, 0.0f, 1.0f}}
 };
 
-const std::vector<uint16_t> gIndices = {
-//    0, 1, 2, 0, 2, 1,
-//    0, 2, 3, 0, 3, 2,
-//    0, 3, 4, 0, 4, 3,
-//    0, 4, 1, 0, 1, 4
-    0, 1, 2, 3, 4
-};
-
-std::vector<glm::mat4> gRotatingVertices;
+std::vector<uint16_t> gIndices(NUM_OF_SENSOR);
 
 struct UniformBufferObject {
     glm::mat4 model;
