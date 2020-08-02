@@ -114,7 +114,7 @@ private:
     }
 
     void createIndexBuffer() {
-        VkDeviceSize bufferSize = sizeof(gIndices[0]) * gIndices.size();
+        VkDeviceSize bufferSize = sizeof(instances->gIndices[0]) * instances->gIndices.size();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -123,7 +123,7 @@ private:
 
         void* data;
         vkMapMemory(instances->device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, gIndices.data(), (size_t) bufferSize);
+        memcpy(data, instances->gIndices.data(), (size_t) bufferSize);
         vkUnmapMemory(instances->device, stagingBufferMemory);
 
         gCreateBuffer(instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -242,7 +242,7 @@ private:
             vkCmdBindDescriptorSets(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->pipelineLayout,
                 0, 1, &instances->descriptorSets[i], 0, nullptr);
 //            vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(tmpVertices.size()), 1, 0, 0);
-            vkCmdDrawIndexed(instances->commandBuffers[i], static_cast<uint32_t>(gIndices.size()), 1, 0, 0, 0);
+            vkCmdDrawIndexed(instances->commandBuffers[i], static_cast<uint32_t>(instances->gIndices.size()), 1, 0, 0, 0);
 
             vkCmdEndRenderPass(instances->commandBuffers[i]);
 

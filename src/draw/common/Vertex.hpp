@@ -9,8 +9,6 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-const int NUM_OF_SENSOR = 57;
-
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 color;
@@ -42,11 +40,14 @@ struct Vertex {
     }
 };
 
-const std::vector<Vertex> tmpVertices = {
-    {{0.0f, 0.0f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+std::vector<Vertex> axisVertices = {
+    {{200.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{-200.0f, 0.0f, 0.0f}, {0.1f, 0.0f, 0.0f}},
+    {{0.0f, 200.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.0f, -200.0f, 0.0f}, {0.0f, 0.1f, 0.0f}},
+    {{0.0f, 0.0f, 200.0f}, {0.0f, 0.0f, 1.0f}},
+    {{0.0f, 0.0f, -200.0f}, {0.0f, 0.0f, 0.1f}}
 };
-
-std::vector<uint16_t> gIndices(NUM_OF_SENSOR);
 
 struct UniformBufferObject {
     glm::mat4 model;
