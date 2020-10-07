@@ -1,10 +1,8 @@
 #ifndef VULKAN_CUBE_DEVICEQUEUE_HPP
 #define VULKAN_CUBE_DEVICEQUEUE_HPP
 
-#define GLFW_INCLUDE_VULKAN
-
 #include "common/Common.hpp"
-#include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
 #include <vector>
 #include <set>
 

@@ -1,12 +1,11 @@
 #ifndef VULKAN_CUBE_PRESENTATION_HPP
 #define VULKAN_CUBE_PRESENTATION_HPP
 
-#define GLFW_INCLUDE_VULKAN
 
 #include "common/Common.hpp"
-#include <GLFW/glfw3.h>
 #include <stdexcept>
 #include <cstdint>
+#include <vulkan/vulkan.h>
 
 class Presentation {
 private:
@@ -134,14 +133,8 @@ private:
 
 
 public:
-    void createSurface(Instances* _instances) {
+    void create(Instances* _instances) {
         instances = _instances;
-        if (glfwCreateWindowSurface(instances->instance, instances->window, nullptr, &instances->surface) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create window surface");
-        }
-    }
-
-    void create() {
         createSwapChain();
         createImageView();
     }

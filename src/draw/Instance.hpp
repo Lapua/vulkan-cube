@@ -1,12 +1,11 @@
 #ifndef VULKAN_CUBE_INSTANCE_HPP
 #define VULKAN_CUBE_INSTANCE_HPP
 
-#define GLFW_INCLUDE_VULKAN
 
 #include "common/Common.hpp"
-#include <GLFW/glfw3.h>
 #include <iostream>
 #include <cstring>
+#include <vulkan/vulkan.h>
 
 class Instance {
 private:
@@ -39,15 +38,11 @@ private:
     }
 
     std::vector<const char*> getRequiredExtensions() {
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
+        std::vector<const char*> extensions;
         if (gEnableValidationLayers) {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
+        extensions.push_back("VK_KHR_surface");
 
         return extensions;
     }
@@ -115,17 +110,13 @@ public:
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
-        // GLFW 拡張機能取得
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
         // creating instance
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
         auto extensions = getRequiredExtensions();
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());;
         createInfo.ppEnabledExtensionNames = extensions.data();
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;

@@ -1,10 +1,8 @@
 #ifndef VULKAN_CUBE_COMMON_HPP
 #define VULKAN_CUBE_COMMON_HPP
 
-#define GLFW_INCLUDE_VULKAN
-
 #include "Vertex.hpp"
-#include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
 #include <set>
@@ -17,7 +15,7 @@ typedef struct Instances {
     const uint32_t HEIGHT = 600;
     const int MAX_FRAME_IN_FLIGHT = 2;
 
-    GLFWwindow* window;
+    void* mainWindow;
 
     // vulkan instance
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -103,7 +101,8 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surfa
 
         // window surfaceがサポートしているかを確認
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+//        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+        presentSupport = true;
         if (presentSupport) {
             indices.presentFamily = i;
         }

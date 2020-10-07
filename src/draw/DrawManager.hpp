@@ -1,14 +1,11 @@
 #ifndef VULKAN_CUBE_DRAWMANAGER_HPP
 #define VULKAN_CUBE_DRAWMANAGER_HPP
 
-#define GLFW_INCLUDE_VULKAN
-
 #include "Instance.hpp"
 #include "DeviceQueue.hpp"
 #include "Presentation.hpp"
 #include "GraphicsPipeline.hpp"
 #include "Draw.hpp"
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
@@ -18,6 +15,8 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <vulkan/vulkan.h>
+#include "src/ui/MainWindow.hpp"
 
 class DrawManager {
 private:
@@ -25,6 +24,8 @@ private:
     std::vector<std::string> sensors;
     std::stack<int> sensorsHistory;
 
+    // TODO constructerにinstancesを渡す
+    // TODO createのスペルミス
     Instance creatInstance;
     DeviceQueue deviceQueue;
     Presentation presentation;
@@ -33,22 +34,11 @@ private:
 
     void initVulkan() {
         readFiles();
-        initWindow();
         creatInstance.createInstance(&instances);
-        presentation.createSurface(&instances);
         deviceQueue.create(&instances);
-        presentation.create();
+        presentation.create(&instances);
         graphicsPipeline.create(&instances);
         draw.run(&instances);
-    }
-
-    void initWindow() {
-        glfwInit();
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-        instances.window = glfwCreateWindow(instances.WIDTH, instances.HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
     void readFiles() {
@@ -152,8 +142,7 @@ private:
     }
 
     void mainLoop() {
-        while (!glfwWindowShouldClose(instances.window)) {
-            glfwPollEvents();
+        while (false) {
             drawFrame();
         }
 
@@ -249,11 +238,22 @@ private:
         deviceQueue.destroy();
         presentation.destroySurface();
         creatInstance.destroyInstance();
-        glfwDestroyWindow(instances.window);
-        glfwTerminate();
     }
 
 public:
+    VkInstance* createInstance() {
+        creatInstance.createInstance(&instances);
+        return &instances.instance;
+    }
+
+    void setSurface(VkSurfaceKHR _surface) {
+        instances.surface = _surface;
+    }
+
+    void setInstance(VkInstance _instance) {
+        instances.instance = _instance;
+    }
+
     void run() {
         initVulkan();
         mainLoop();

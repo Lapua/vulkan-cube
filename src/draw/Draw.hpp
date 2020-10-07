@@ -1,12 +1,7 @@
 #ifndef VULKAN_CUBE_DRAW_HPP
 #define VULKAN_CUBE_DRAW_HPP
 
-#define GLFW_INCLUDE_VULKAN
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-
 #include "common/Common.hpp"
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <unitypes.h>
