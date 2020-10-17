@@ -1,7 +1,6 @@
 #ifndef VULKAN_CUBE_VERTEX_HPP
 #define VULKAN_CUBE_VERTEX_HPP
 
-#include "Common.hpp"
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>

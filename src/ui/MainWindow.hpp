@@ -25,15 +25,17 @@ public:
     QVulkanWindow *windowSurface;
     VkSurfaceKHR surface;
     VkInstance vkInst;
+    QVulkanInstance *qInstance;
 
     MainWindow() {
-        QVulkanInstance inst;
-        inst.create();
+        qInstance = new QVulkanInstance;
+        qInstance->create();
         windowSurface = new QVulkanWindow;
-        windowSurface->setVulkanInstance(&inst);
+        windowSurface->setVulkanInstance(qInstance);
+        windowSurface->resize(1024, 768);
         windowSurface->show();
         surface = QVulkanInstance::surfaceForWindow(windowSurface);
-        vkInst = inst.vkInstance();
+        vkInst = qInstance->vkInstance();
 
         QWidget *windowWidget = QWidget::createWindowContainer(windowSurface);
         windowWidget->setParent(this);
@@ -58,7 +60,17 @@ public:
     }
 
     void nextFrame() {
-        windowSurface->requestUpdate();
+//        windowSurface->requestUpdate();
+    }
+
+    void destroy(VkInstance* instance) {
+        QVulkanInstance qInstance;
+        qInstance.setVkInstance(*instance);
+        qInstance.destroy();
+    }
+
+    void queue() {
+//        qInstance->presentQueued(windowSurface);
     }
 };
 

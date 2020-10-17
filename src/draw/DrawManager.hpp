@@ -20,6 +20,8 @@
 
 class DrawManager {
 private:
+    MainWindow *mainWindow;
+
     Instances instances;
     std::vector<std::string> sensors;
     std::stack<int> sensorsHistory;
@@ -34,7 +36,7 @@ private:
 
     void initVulkan() {
         readFiles();
-        creatInstance.createInstance(&instances);
+//        creatInstance.createInstance(&instances);
         deviceQueue.create(&instances);
         presentation.create(&instances);
         graphicsPipeline.create(&instances);
@@ -142,7 +144,9 @@ private:
     }
 
     void mainLoop() {
-        while (false) {
+        while (true) {
+            MainWindow *m = (MainWindow*)instances.mainWindow;
+            m->nextFrame();
             drawFrame();
         }
 
@@ -237,7 +241,8 @@ private:
         presentation.destroySwapChain();
         deviceQueue.destroy();
         presentation.destroySurface();
-        creatInstance.destroyInstance();
+//        creatInstance.destroyInstance();
+        mainWindow->destroy(&instances.instance);
     }
 
 public:
@@ -252,6 +257,10 @@ public:
 
     void setInstance(VkInstance _instance) {
         instances.instance = _instance;
+    }
+
+    void setMainWindow(MainWindow* _mainWindow) {
+        mainWindow = _mainWindow;
     }
 
     void run() {
