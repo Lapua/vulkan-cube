@@ -22,7 +22,7 @@ find_package(vulkan REQUIRED)
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 
-add_executable(vulkan_cube src/main.cpp src/draw/DrawManager.hpp src/draw/Instance.hpp src/draw/DeviceQueue.hpp src/draw/Debugger.hpp src/draw/common/Common.hpp src/draw/Presentation.hpp src/draw/GraphicsPipeline.hpp src/draw/Draw.hpp src/ui/MainWindow.hpp src/ui/VulkanWindow.hpp src/ui/MotionRenderer.hpp src/ui/ReadFiles.hpp src/draw/pracClass.hpp)
+add_executable(vulkan_cube src/main.cpp src/draw/DrawManager.hpp src/draw/Instance.hpp src/draw/DeviceQueue.hpp src/draw/Debugger.hpp src/draw/common/Common.hpp src/draw/Presentation.hpp src/draw/GraphicsPipeline.hpp src/draw/Draw.hpp src/ui/MainWindow.hpp src/ui/VulkanWindow.hpp src/ui/MotionRenderer.hpp src/ui/ReadFiles.hpp src/draw/VulkanWindow.hpp)
 
 find_package(OpenGL REQUIRED)
 target_link_libraries(${PROJECT_NAME} OpenGL::GL)

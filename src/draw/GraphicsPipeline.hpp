@@ -66,7 +66,7 @@ private:
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(instances->device, &renderPassInfo, nullptr, &instances->renderPass) != VK_SUCCESS) {
+        if (instances->devFunctions->vkCreateRenderPass(instances->device, &renderPassInfo, nullptr, &instances->renderPass) != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass");
         }
     }
@@ -84,7 +84,7 @@ private:
         layoutInfo.bindingCount = 1;
         layoutInfo.pBindings = &uboLayoutBinding;
 
-        if (vkCreateDescriptorSetLayout(instances->device, &layoutInfo, nullptr, &instances->descriptorSetLayout) != VK_SUCCESS) {
+        if (instances->devFunctions->vkCreateDescriptorSetLayout(instances->device, &layoutInfo, nullptr, &instances->descriptorSetLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout");
         }
     }
@@ -192,7 +192,7 @@ private:
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &instances->descriptorSetLayout;
 
-        if (vkCreatePipelineLayout(instances->device, &pipelineLayoutInfo, nullptr, &instances->pipelineLayout) != VK_SUCCESS) {
+        if (instances->devFunctions->vkCreatePipelineLayout(instances->device, &pipelineLayoutInfo, nullptr, &instances->pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout");
         }
 
@@ -212,12 +212,12 @@ private:
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.pDepthStencilState = &depthStencil;
 
-        if (vkCreateGraphicsPipelines(instances->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &instances->graphicsPipeline) != VK_SUCCESS) {
+        if (instances->devFunctions->vkCreateGraphicsPipelines(instances->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &instances->graphicsPipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline");
         }
 
-        vkDestroyShaderModule(instances->device, fragShaderModule, nullptr);
-        vkDestroyShaderModule(instances->device, vertShaderModule, nullptr);
+        instances->devFunctions->vkDestroyShaderModule(instances->device, fragShaderModule, nullptr);
+        instances->devFunctions->vkDestroyShaderModule(instances->device, vertShaderModule, nullptr);
     }
 
     static std::vector<char> readFile(const std::string& filename) {
@@ -243,7 +243,7 @@ private:
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
         VkShaderModule shaderModule;
-        if (vkCreateShaderModule(instances->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        if (instances->devFunctions->vkCreateShaderModule(instances->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("failed to create shader module");
         }
 
@@ -259,10 +259,10 @@ public:
     }
 
     void destroy() {
-        vkDestroyDescriptorSetLayout(instances->device, instances->descriptorSetLayout, nullptr);
-        vkDestroyPipeline(instances->device, instances->graphicsPipeline, nullptr);
-        vkDestroyPipelineLayout(instances->device, instances->pipelineLayout, nullptr);
-        vkDestroyRenderPass(instances->device, instances->renderPass, nullptr);
+        instances->devFunctions->vkDestroyDescriptorSetLayout(instances->device, instances->descriptorSetLayout, nullptr);
+        instances->devFunctions->vkDestroyPipeline(instances->device, instances->graphicsPipeline, nullptr);
+        instances->devFunctions->vkDestroyPipelineLayout(instances->device, instances->pipelineLayout, nullptr);
+        instances->devFunctions->vkDestroyRenderPass(instances->device, instances->renderPass, nullptr);
     }
 };
 

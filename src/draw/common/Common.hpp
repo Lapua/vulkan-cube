@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 #include <set>
+#include <QVulkanFunctions>
 
 const VkClearColorValue BACKGROUND_COLOR = {0.05f, 0.05f, 0.05f, 1.0f};
 const bool gEnableValidationLayers = true;
@@ -14,6 +15,10 @@ typedef struct Instances {
     const uint32_t WIDTH = 800;
     const uint32_t HEIGHT = 600;
     const int MAX_FRAME_IN_FLIGHT = 2;
+
+    QVulkanFunctions *functions;
+    QVulkanDeviceFunctions *devFunctions;
+    QVulkanInstance *qInst;
 
     // vulkan instance
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -81,14 +86,14 @@ const std::vector<const char*> gValidationLayers = {
 };
 
 // findQueueFamiliesは様々なところから呼び出されるため、PhysicalDeviceとは分離
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+QueueFamilyIndices findQueueFamilies(Instances *instances, VkPhysicalDevice device, VkSurfaceKHR surface) {
     QueueFamilyIndices indices;
 
     // QueueFamilyの取得
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    instances->functions->vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+    instances->functions->vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies) {
@@ -127,7 +132,7 @@ VkImageView gCreateImageView(Instances* instances, VkImage image, VkFormat forma
     viewInfo.subresourceRange.layerCount = 1;
 
     VkImageView imageView;
-    if (vkCreateImageView(instances->device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    if (instances->devFunctions->vkCreateImageView(instances->device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture image view!");
     }
 
@@ -183,23 +188,23 @@ void gCreateBuffer(Instances* instances, VkDeviceSize size, VkBufferUsageFlags u
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufferInfo.usage = usage;
 
-    if (vkCreateBuffer(instances->device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+    if (instances->devFunctions->vkCreateBuffer(instances->device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to create vertex buffer");
     }
 
     // メモリ割当
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(instances->device, buffer, &memRequirements);
+    instances->devFunctions->vkGetBufferMemoryRequirements(instances->device, buffer, &memRequirements);
 
     VkMemoryAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = memRequirements.size;
     allocateInfo.memoryTypeIndex = gFindMemoryType(instances, memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(instances->device, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+    if (instances->devFunctions->vkAllocateMemory(instances->device, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate buffer memory");
     }
-    vkBindBufferMemory(instances->device, buffer, bufferMemory, 0);
+    instances->devFunctions->vkBindBufferMemory(instances->device, buffer, bufferMemory, 0);
 }
 
 void gCopyBuffer(Instances* instances, VkBuffer srcBuffer ,VkBuffer dstBuffer, VkDeviceSize size) {
@@ -210,29 +215,29 @@ void gCopyBuffer(Instances* instances, VkBuffer srcBuffer ,VkBuffer dstBuffer, V
     allocateInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(instances->device, &allocateInfo, &commandBuffer);
+    instances->devFunctions->vkAllocateCommandBuffers(instances->device, &allocateInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    instances->devFunctions->vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    instances->devFunctions->vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-    vkEndCommandBuffer(commandBuffer);
+    instances->devFunctions->vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(instances->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(instances->graphicsQueue);
+    instances->devFunctions->vkQueueSubmit(instances->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    instances->devFunctions->vkQueueWaitIdle(instances->graphicsQueue);
 
-    vkFreeCommandBuffers(instances->device, instances->commandPool, 1, &commandBuffer);
+    instances->devFunctions->vkFreeCommandBuffers(instances->device, instances->commandPool, 1, &commandBuffer);
 }
 
 #endif //VULKAN_CUBE_COMMON_HPP

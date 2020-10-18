@@ -13,12 +13,12 @@ private:
     // 物理デバイスの選択
     void pickPhysicalDevice() {
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instances->instance, &deviceCount, nullptr);
+        instances->functions->vkEnumeratePhysicalDevices(instances->instance, &deviceCount, nullptr);
         if (deviceCount == 0) {
             throw std::runtime_error("failed to find GPUs with vulkan support");
         }
         std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instances->instance, &deviceCount, devices.data());
+        instances->functions->vkEnumeratePhysicalDevices(instances->instance, &deviceCount, devices.data());
 
         for (const auto& device : devices) {
             if (isDeviceSuitable(device)) {
@@ -32,14 +32,14 @@ private:
     }
 
     bool isDeviceSuitable(VkPhysicalDevice _device) {
-        QueueFamilyIndices indices = findQueueFamilies(_device, instances->surface);
+        QueueFamilyIndices indices = findQueueFamilies(instances, _device, instances->surface);
 
         return indices.isComplete();
     }
 
     // 論理デバイスの作成
     void createLogicalDevice() {
-        QueueFamilyIndices indices = findQueueFamilies(instances->physicalDevice, instances->surface);
+        QueueFamilyIndices indices = findQueueFamilies(instances, instances->physicalDevice, instances->surface);
 
         // 描画するgraphicQueueとwindow surface用のqueue2つを作る
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
@@ -70,7 +70,7 @@ private:
         // 検証レイヤーを挟むなら, 正しい設定にしてください
         createInfo.enabledLayerCount = 0;
 
-        if (vkCreateDevice(instances->physicalDevice, &createInfo, nullptr, &instances->device) != VK_SUCCESS) {
+        if (instances->functions->vkCreateDevice(instances->physicalDevice, &createInfo, nullptr, &instances->device) != VK_SUCCESS) {
             throw std::runtime_error("failed to create logical device!");
         }
 

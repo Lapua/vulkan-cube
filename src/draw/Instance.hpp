@@ -43,7 +43,8 @@ private:
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
         extensions.push_back("VK_KHR_surface");
-        extensions.push_back("VK_EXT_debug_report");
+//        extensions.push_back("VK_EXT_debug_report");
+        extensions.push_back("VK_EXT_metal_surface");
 
         return extensions;
     }

@@ -39,7 +39,7 @@ private:
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         // graphicとpresentのQueueが同一かどうかで処理が変わる
-        QueueFamilyIndices indices = findQueueFamilies(instances->physicalDevice, instances->surface);
+        QueueFamilyIndices indices = findQueueFamilies(instances, instances->physicalDevice, instances->surface);
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
         if (indices.graphicsFamily != indices.presentFamily) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;

@@ -16,12 +16,11 @@
 #include <sstream>
 #include <algorithm>
 #include <vulkan/vulkan.h>
-#include "pracClass.hpp"
+#include <QVulkanFunctions>
+#include <QVulkanInstance>
 
 class DrawManager {
 private:
-    PracClass *pracClass;
-
     Instances instances;
     std::vector<std::string> sensors;
     std::stack<int> sensorsHistory;
@@ -36,9 +35,14 @@ private:
 
     void initVulkan() {
         readFiles();
-        creatInstance.createInstance(&instances);
-        pracClass->getSurface(&instances);
+//        creatInstance.createInstance(&instances);
         deviceQueue.create(&instances);
+
+        QueueFamilyIndices indices = findQueueFamilies(&instances, instances.physicalDevice, instances.surface);
+        instances.devFunctions = instances.qInst->deviceFunctions(instances.device);
+        instances.devFunctions->vkGetDeviceQueue(instances.device, indices.graphicsFamily.value(), 0, &instances.graphicsQueue);
+        instances.devFunctions->vkGetDeviceQueue(instances.device, indices.presentFamily.value(), 0, &instances.presentQueue);
+
         presentation.create(&instances);
         graphicsPipeline.create(&instances);
         draw.run(&instances);
@@ -240,18 +244,31 @@ private:
         presentation.destroySwapChain();
         deviceQueue.destroy();
         presentation.destroySurface();
-        creatInstance.destroyInstance();
+//        creatInstance.destroyInstance();
     }
+
+    bool isFinished = false;
 
 public:
-    void setInst(PracClass *_pracClass) {
-        pracClass = _pracClass;
+    DrawManager() {
     }
 
-    void run() {
+    Instances* getInstances() {
+        return &instances;
+    }
+
+    void run(VkInstance _instance, VkSurfaceKHR _surface, QVulkanFunctions *_functions, QVulkanInstance *inst) {
+        instances.instance = _instance;
+        instances.surface = _surface;
+        instances.functions = _functions;
+        instances.qInst = inst;
         initVulkan();
-        mainLoop();
-        cleanUp();
+//        mainLoop();
+//        cleanUp();
+    }
+
+    bool isFinish() {
+        return isFinished;
     }
 };
 

@@ -30,7 +30,7 @@ private:
             framebufferInfo.height = instances->swapChainExtent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(instances->device, &framebufferInfo, nullptr, &instances->swapChainFrameBuffers[i]) != VK_SUCCESS) {
+            if (instances->devFunctions->vkCreateFramebuffer(instances->device, &framebufferInfo, nullptr, &instances->swapChainFrameBuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create framebuffer!");
             }
         }
@@ -38,13 +38,13 @@ private:
 
     // command bufferに必要なもの...
     void createCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(instances->physicalDevice, instances->surface);
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(instances, instances->physicalDevice, instances->surface);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-        if (vkCreateCommandPool(instances->device, &poolInfo, nullptr, &instances->commandPool) != VK_SUCCESS) {
+        if (instances->devFunctions->vkCreateCommandPool(instances->device, &poolInfo, nullptr, &instances->commandPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create command pool");
         }
     }
@@ -71,23 +71,23 @@ private:
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateImage(instances->device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+        if (instances->devFunctions->vkCreateImage(instances->device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image!");
         }
 
         VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(instances->device, image, &memRequirements);
+        instances->devFunctions->vkGetImageMemoryRequirements(instances->device, image, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = gFindMemoryType(instances, memRequirements.memoryTypeBits, properties);
 
-        if (vkAllocateMemory(instances->device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        if (instances->devFunctions->vkAllocateMemory(instances->device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate image memory!");
         }
 
-        vkBindImageMemory(instances->device, image, imageMemory, 0);
+        instances->devFunctions->vkBindImageMemory(instances->device, image, imageMemory, 0);
     }
 
     void createVertexBuffer() {
@@ -98,14 +98,14 @@ private:
         gCreateBuffer(instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, stagingBuffer, stagingBufferMemory);
 
         void* data;
-        vkMapMemory(instances->device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        instances->devFunctions->vkMapMemory(instances->device, stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, instances->vertices[0].data(), (size_t) bufferSize);
-        vkUnmapMemory(instances->device, stagingBufferMemory);
+        instances->devFunctions->vkUnmapMemory(instances->device, stagingBufferMemory);
         gCreateBuffer(instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                      instances->vertexBuffer, instances->vertexBufferMemory);
         gCopyBuffer(instances, stagingBuffer, instances->vertexBuffer, bufferSize);
-        vkDestroyBuffer(instances->device, stagingBuffer, nullptr);
-        vkFreeMemory(instances->device, stagingBufferMemory, nullptr);
+        instances->devFunctions->vkDestroyBuffer(instances->device, stagingBuffer, nullptr);
+        instances->devFunctions->vkFreeMemory(instances->device, stagingBufferMemory, nullptr);
     }
 
     void createIndexBuffer() {
@@ -117,16 +117,16 @@ private:
             stagingBuffer, stagingBufferMemory);
 
         void* data;
-        vkMapMemory(instances->device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        instances->devFunctions->vkMapMemory(instances->device, stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, instances->gIndices.data(), (size_t) bufferSize);
-        vkUnmapMemory(instances->device, stagingBufferMemory);
+        instances->devFunctions->vkUnmapMemory(instances->device, stagingBufferMemory);
 
         gCreateBuffer(instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, instances->indexBuffer, instances->indexBufferMemory);
         gCopyBuffer(instances, stagingBuffer, instances->indexBuffer, bufferSize);
 
-        vkDestroyBuffer(instances->device, stagingBuffer, nullptr);
-        vkFreeMemory(instances->device, stagingBufferMemory, nullptr);
+        instances->devFunctions->vkDestroyBuffer(instances->device, stagingBuffer, nullptr);
+        instances->devFunctions->vkFreeMemory(instances->device, stagingBufferMemory, nullptr);
     }
 
     void createUniformBuffers() {
@@ -152,7 +152,7 @@ private:
         poolCreateInfo.pPoolSizes = &poolSize;
         poolCreateInfo.maxSets = static_cast<uint32_t>(instances->swapChainImages.size());
 
-        if (vkCreateDescriptorPool(instances->device, &poolCreateInfo, nullptr, &instances->descriptorPool) != VK_SUCCESS) {
+        if (instances->devFunctions->vkCreateDescriptorPool(instances->device, &poolCreateInfo, nullptr, &instances->descriptorPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor pool");
         }
     }
@@ -166,7 +166,7 @@ private:
         allocateInfo.pSetLayouts = layouts.data();
 
         instances->descriptorSets.resize(instances->swapChainImages.size());
-        if (vkAllocateDescriptorSets(instances->device, &allocateInfo, instances->descriptorSets.data()) != VK_SUCCESS) {
+        if (instances->devFunctions->vkAllocateDescriptorSets(instances->device, &allocateInfo, instances->descriptorSets.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate descriptor sets");
         }
 
@@ -185,7 +185,7 @@ private:
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.pBufferInfo = &bufferInfo;
 
-            vkUpdateDescriptorSets(instances->device, 1, &descriptorWrite, 0, nullptr);
+            instances->devFunctions->vkUpdateDescriptorSets(instances->device, 1, &descriptorWrite, 0, nullptr);
         }
     }
 
@@ -198,7 +198,7 @@ private:
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = (uint32_t) instances->commandBuffers.size();
 
-        if (vkAllocateCommandBuffers(instances->device, &allocInfo, instances->commandBuffers.data()) != VK_SUCCESS) {
+        if (instances->devFunctions->vkAllocateCommandBuffers(instances->device, &allocInfo, instances->commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers");
         }
 
@@ -206,7 +206,7 @@ private:
             VkCommandBufferBeginInfo beginInfo{};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-            if (vkBeginCommandBuffer(instances->commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+            if (instances->devFunctions->vkBeginCommandBuffer(instances->commandBuffers[i], &beginInfo) != VK_SUCCESS) {
                 throw std::runtime_error("failed to begin recording command buffer!");
             }
 
@@ -225,23 +225,23 @@ private:
 
 
 
-            vkCmdBeginRenderPass(instances->commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+            instances->devFunctions->vkCmdBeginRenderPass(instances->commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->graphicsPipeline);
+            instances->devFunctions->vkCmdBindPipeline(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->graphicsPipeline);
 
             VkBuffer vertexBuffers[] = {instances->vertexBuffer};
             VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(instances->commandBuffers[i], 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(instances->commandBuffers[i], instances->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+            instances->devFunctions->vkCmdBindVertexBuffers(instances->commandBuffers[i], 0, 1, vertexBuffers, offsets);
+            instances->devFunctions->vkCmdBindIndexBuffer(instances->commandBuffers[i], instances->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-            vkCmdBindDescriptorSets(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->pipelineLayout,
+            instances->devFunctions->vkCmdBindDescriptorSets(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->pipelineLayout,
                 0, 1, &instances->descriptorSets[i], 0, nullptr);
 //            vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(tmpVertices.size()), 1, 0, 0);
-            vkCmdDrawIndexed(instances->commandBuffers[i], static_cast<uint32_t>(instances->gIndices.size()), 1, 0, 0, 0);
+            instances->devFunctions->vkCmdDrawIndexed(instances->commandBuffers[i], static_cast<uint32_t>(instances->gIndices.size()), 1, 0, 0, 0);
 
-            vkCmdEndRenderPass(instances->commandBuffers[i]);
+            instances->devFunctions->vkCmdEndRenderPass(instances->commandBuffers[i]);
 
-            if (vkEndCommandBuffer(instances->commandBuffers[i]) != VK_SUCCESS) {
+            if (instances->devFunctions->vkEndCommandBuffer(instances->commandBuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to record command buffer!");
             }
         }
@@ -261,11 +261,11 @@ private:
         fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < instances->MAX_FRAME_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(instances->device, &semaphoreInfo, nullptr, &instances->imageAvailableSemaphores[i]) !=
+            if (instances->devFunctions->vkCreateSemaphore(instances->device, &semaphoreInfo, nullptr, &instances->imageAvailableSemaphores[i]) !=
                 VK_SUCCESS ||
-                vkCreateSemaphore(instances->device, &semaphoreInfo, nullptr, &instances->renderFinishedSemaphores[i]) !=
+                instances->devFunctions->vkCreateSemaphore(instances->device, &semaphoreInfo, nullptr, &instances->renderFinishedSemaphores[i]) !=
                 VK_SUCCESS ||
-                vkCreateFence(instances->device, &fenceCreateInfo, nullptr, &instances->inFlightFences[i]) != VK_SUCCESS) {
+                instances->devFunctions->vkCreateFence(instances->device, &fenceCreateInfo, nullptr, &instances->inFlightFences[i]) != VK_SUCCESS) {
 
                 throw std::runtime_error("failed to create synchronization objects for frame!");
             }
@@ -289,32 +289,32 @@ public:
 
     void destroy() {
         // cleanup swapchain
-        vkDestroyImageView(instances->device, instances->depthImageView, nullptr);
-        vkDestroyImage(instances->device, instances->depthImage, nullptr);
-        vkFreeMemory(instances->device, instances->depthImageMemory, nullptr);
+        instances->devFunctions->vkDestroyImageView(instances->device, instances->depthImageView, nullptr);
+        instances->devFunctions->vkDestroyImage(instances->device, instances->depthImage, nullptr);
+        instances->devFunctions->vkFreeMemory(instances->device, instances->depthImageMemory, nullptr);
 
         for (auto framebuffer : instances->swapChainFrameBuffers) {
-            vkDestroyFramebuffer(instances->device, framebuffer, nullptr);
+            instances->devFunctions->vkDestroyFramebuffer(instances->device, framebuffer, nullptr);
         }
-        vkFreeCommandBuffers(instances->device, instances->commandPool, static_cast<uint32_t>(instances->commandBuffers.size()), instances->commandBuffers.data());
+        instances->devFunctions->vkFreeCommandBuffers(instances->device, instances->commandPool, static_cast<uint32_t>(instances->commandBuffers.size()), instances->commandBuffers.data());
         for (size_t i = 0; i < instances->swapChainImages.size(); i++) {
-            vkDestroyBuffer(instances->device, instances->uniformBuffers[i], nullptr);
-            vkFreeMemory(instances->device, instances->uniformBuffersMemory[i], nullptr);
+            instances->devFunctions->vkDestroyBuffer(instances->device, instances->uniformBuffers[i], nullptr);
+            instances->devFunctions->vkFreeMemory(instances->device, instances->uniformBuffersMemory[i], nullptr);
         }
-        vkDestroyDescriptorPool(instances->device, instances->descriptorPool, nullptr);
+        instances->devFunctions->vkDestroyDescriptorPool(instances->device, instances->descriptorPool, nullptr);
 
-        vkDestroyBuffer(instances->device, instances->indexBuffer, nullptr);
-        vkFreeMemory(instances->device, instances->indexBufferMemory, nullptr);
+        instances->devFunctions->vkDestroyBuffer(instances->device, instances->indexBuffer, nullptr);
+        instances->devFunctions->vkFreeMemory(instances->device, instances->indexBufferMemory, nullptr);
 
-        vkDestroyBuffer(instances->device, instances->vertexBuffer, nullptr);
-        vkFreeMemory(instances->device, instances->vertexBufferMemory, nullptr);
+        instances->devFunctions->vkDestroyBuffer(instances->device, instances->vertexBuffer, nullptr);
+        instances->devFunctions->vkFreeMemory(instances->device, instances->vertexBufferMemory, nullptr);
 
         for (size_t i =0; i < instances->MAX_FRAME_IN_FLIGHT; i++) {
-            vkDestroySemaphore(instances->device, instances->renderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(instances->device, instances->imageAvailableSemaphores[i], nullptr);
-            vkDestroyFence(instances->device, instances->inFlightFences[i], nullptr);
+            instances->devFunctions->vkDestroySemaphore(instances->device, instances->renderFinishedSemaphores[i], nullptr);
+            instances->devFunctions->vkDestroySemaphore(instances->device, instances->imageAvailableSemaphores[i], nullptr);
+            instances->devFunctions->vkDestroyFence(instances->device, instances->inFlightFences[i], nullptr);
         }
-        vkDestroyCommandPool(instances->device, instances->commandPool, nullptr);
+        instances->devFunctions->vkDestroyCommandPool(instances->device, instances->commandPool, nullptr);
     }
 };
 
