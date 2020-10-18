@@ -15,8 +15,6 @@ typedef struct Instances {
     const uint32_t HEIGHT = 600;
     const int MAX_FRAME_IN_FLIGHT = 2;
 
-    void* mainWindow;
-
     // vulkan instance
     VkDebugUtilsMessengerEXT debugMessenger;
     VkInstance instance;
@@ -27,7 +25,6 @@ typedef struct Instances {
     VkDevice device;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
-
 
     VkSwapchainKHR swapChain;
     std::vector<VkImage> swapChainImages;
@@ -102,8 +99,7 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surfa
 
         // window surfaceがサポートしているかを確認
         VkBool32 presentSupport = false;
-//        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-        presentSupport = true;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
         if (presentSupport) {
             indices.presentFamily = i;
         }
@@ -179,7 +175,7 @@ uint32_t gFindMemoryType(Instances* instances, uint32_t typeFilter, VkMemoryProp
 }
 
 void gCreateBuffer(Instances* instances, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                  VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+                   VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

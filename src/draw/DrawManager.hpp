@@ -16,11 +16,11 @@
 #include <sstream>
 #include <algorithm>
 #include <vulkan/vulkan.h>
-#include "src/ui/MainWindow.hpp"
+#include "pracClass.hpp"
 
 class DrawManager {
 private:
-    MainWindow *mainWindow;
+    PracClass *pracClass;
 
     Instances instances;
     std::vector<std::string> sensors;
@@ -36,7 +36,8 @@ private:
 
     void initVulkan() {
         readFiles();
-//        creatInstance.createInstance(&instances);
+        creatInstance.createInstance(&instances);
+        pracClass->getSurface(&instances);
         deviceQueue.create(&instances);
         presentation.create(&instances);
         graphicsPipeline.create(&instances);
@@ -145,8 +146,6 @@ private:
 
     void mainLoop() {
         while (true) {
-            MainWindow *m = (MainWindow*)instances.mainWindow;
-            m->nextFrame();
             drawFrame();
         }
 
@@ -241,26 +240,12 @@ private:
         presentation.destroySwapChain();
         deviceQueue.destroy();
         presentation.destroySurface();
-//        creatInstance.destroyInstance();
-        mainWindow->destroy(&instances.instance);
+        creatInstance.destroyInstance();
     }
 
 public:
-    VkInstance* createInstance() {
-        creatInstance.createInstance(&instances);
-        return &instances.instance;
-    }
-
-    void setSurface(VkSurfaceKHR _surface) {
-        instances.surface = _surface;
-    }
-
-    void setInstance(VkInstance _instance) {
-        instances.instance = _instance;
-    }
-
-    void setMainWindow(MainWindow* _mainWindow) {
-        mainWindow = _mainWindow;
+    void setInst(PracClass *_pracClass) {
+        pracClass = _pracClass;
     }
 
     void run() {

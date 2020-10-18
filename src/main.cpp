@@ -1,16 +1,21 @@
-//#include "draw/DrawManager.hpp"
-#include "ui/VulkanWindow.hpp"
+#include "draw/DrawManager.hpp"
+//#include "ui/VulkanWindow.hpp"
+#include "draw/pracClass.hpp"
 #include <vulkan/vulkan.h>
 #include <iostream>
 #include <QApplication>
 #include <QVulkanInstance>
-#include <QVulkanWindow>
+#include <QWindow>
 
 int main(int argc, char *argv[]) {
     // init Qt
-    const int WINDOW_WIDTH = 960;
-    const int WINDOW_HEIGHT = 540;
     QApplication app(argc, argv);
+
+    PracClass p;
+    DrawManager d;
+    d.setInst(&p);
+    d.run();
+
     QVulkanInstance instance;
     instance.setLayers(QByteArrayList()
                        << "VK_LAYER_GOOGLE_threading"
@@ -24,10 +29,16 @@ int main(int argc, char *argv[]) {
         std::cout << "failed to create QVulkanInstance";
         return 0;
     }
-    VulkanWindow window;
+//    VulkanWindow window;
+//    window.setVulkanInstance(&instance);
+    QWindow window;
+    window.setSurfaceType(QSurface::VulkanSurface);
     window.setVulkanInstance(&instance);
     window.resize(1024, 768);
     window.show();
+    VkSurfaceKHR s = QVulkanInstance::surfaceForWindow(&window);
+
+    qDebug("yaharo");
 
     return app.exec();
 }

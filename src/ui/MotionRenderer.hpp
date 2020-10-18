@@ -15,6 +15,12 @@ static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
     return (v + byteAlign - 1) & ~(byteAlign - 1);
 }
 
+static float vertexData[] = { // Y up, front = CCW
+    0.0f,   0.5f,   1.0f, 0.0f, 0.0f,
+    -0.5f,  -0.5f,   0.0f, 1.0f, 0.0f,
+    0.5f,  -0.5f,   0.0f, 0.0f, 1.0f
+};
+
 class MotionRenderer : public QVulkanWindowRenderer {
 public:
     MotionRenderer(QVulkanWindow *window) : m_window(window) {
@@ -32,15 +38,19 @@ public:
         graphicsPipeline.create(&instances);
         draw.run(&instances);
 
-        VkFormat f = instances.window->colorFormat();
-
+        /*
         VkBufferCreateInfo bufInfo;
         memset(&bufInfo, 0, sizeof(bufInfo));
         bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        const VkPhysicalDeviceLimits *pdevLimits = &m_window->physicalDeviceProperties()->limits;
+        const VkDeviceSize uniAlign = pdevLimits->minUniformBufferOffsetAlignment;
         // Our internal layout is vertex, uniform, uniform, ... with each uniform buffer start offset aligned to uniAlign.
-        const VkDeviceSize vertexAllocSize = sizeof(instances.vertices[0][0]) * instances.vertices[0].size();
-        const VkDeviceSize uniformAllocSize = sizeof(UniformBufferObject);
+//        const VkDeviceSize vertexAllocSize = sizeof(instances.vertices[0][0]) * instances.vertices[0].size();
+        const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlign);
+        const VkDeviceSize uniformAllocSize = aligned(UNIFORM_DATA_SIZE, uniAlign);
         bufInfo.size = vertexAllocSize + instances.window->concurrentFrameCount() * uniformAllocSize;
+//        const VkDeviceSize uniformAllocSize = sizeof(UniformBufferObject);
+//        bufInfo.size = vertexAllocSize + instances.window->concurrentFrameCount() * uniformAllocSize;
         bufInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         VkResult err = instances.devFunc->vkCreateBuffer(instances.device, &bufInfo, nullptr, &m_buf);
         if (err != VK_SUCCESS)
@@ -63,7 +73,8 @@ public:
         err = instances.devFunc->vkMapMemory(instances.device, m_bufMem, 0, memReq.size, 0, reinterpret_cast<void **>(&p));
         if (err != VK_SUCCESS)
             qFatal("Failed to map memory: %d", err);
-        memcpy(p, instances.vertices[0].data(), (size_t) vertexAllocSize);
+        memcpy(p, vertexData, sizeof(vertexData));
+//        memcpy(p, instances.vertices[0].data(), (size_t) vertexAllocSize);
         QMatrix4x4 ident;
         memset(m_uniformBufInfo, 0, sizeof(m_uniformBufInfo));
         for (int i = 0; i < instances.window->concurrentFrameCount(); ++i) {
@@ -74,6 +85,7 @@ public:
             m_uniformBufInfo[i].range = uniformAllocSize;
         }
         instances.devFunc->vkUnmapMemory(instances.device, m_bufMem);
+        */
 
 //        const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 //        const VkPhysicalDeviceLimits *pdevLimits = &m_window->physicalDeviceProperties()->limits;
