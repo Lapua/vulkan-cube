@@ -35,7 +35,6 @@ private:
 
     void initVulkan() {
         readFiles();
-//        creatInstance.createInstance(&instances);
         deviceQueue.create(&instances);
 
         QueueFamilyIndices indices = findQueueFamilies(&instances, instances.physicalDevice, instances.surface);
@@ -148,12 +147,53 @@ private:
         }
     }
 
-    void mainLoop() {
-        while (true) {
-            drawFrame();
-        }
+    void updateUniformbuffer(uint32_t currentImage) {
+        updateVertex();
 
-        vkDeviceWaitIdle(instances.device);
+        UniformBufferObject ubo{};
+        ubo.model =  glm::scale(glm::mat4(1.0f), glm::vec3(0.001f, 0.001f, 0.001f));
+        ubo.view = glm::lookAt(glm::vec3(-1.0f, 0.8f, 4.0f), glm::vec3(0.6f, 0.8f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ubo.proj = glm::perspective(glm::radians(45.0f), instances.swapChainExtent.width / (float) instances.swapChainExtent.height, 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;   //glmはopenGL用なのでY軸反転する
+
+        void* data;
+        vkMapMemory(instances.device, instances.uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
+        memcpy(data, &ubo, sizeof(ubo));
+        vkUnmapMemory(instances.device, instances.uniformBuffersMemory[currentImage]);
+    }
+
+    void updateVertex() {
+        static int verticesIndex = 0;
+        VkDeviceSize bufferSize = sizeof(instances.vertices[verticesIndex][0]) * instances.vertices[verticesIndex].size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        gCreateBuffer(&instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* vdata;
+        vkMapMemory(instances.device, stagingBufferMemory, 0, bufferSize, 0, &vdata);
+        memcpy(vdata, instances.vertices[verticesIndex].data(), (size_t) bufferSize);
+        vkUnmapMemory(instances.device, stagingBufferMemory);
+        gCopyBuffer(&instances, stagingBuffer, instances.vertexBuffer, bufferSize);
+        vkDestroyBuffer(instances.device, stagingBuffer, nullptr);
+        vkFreeMemory(instances.device, stagingBufferMemory, nullptr);
+
+        if (++verticesIndex >= instances.vertices.size()) {
+            verticesIndex = 0;
+        }
+    }
+
+public:
+    Instances* getInstances() {
+        return &instances;
+    }
+
+    void run(VkInstance _instance, VkSurfaceKHR _surface, QVulkanFunctions *_functions, QVulkanInstance *inst) {
+        instances.instance = _instance;
+        instances.surface = _surface;
+        instances.functions = _functions;
+        instances.qInst = inst;
+        initVulkan();
     }
 
     void drawFrame() {
@@ -202,73 +242,11 @@ private:
         instances.currentFrame = (instances.currentFrame + 1) % instances.MAX_FRAME_IN_FLIGHT;
     }
 
-    void updateUniformbuffer(uint32_t currentImage) {
-        updateVertex();
-
-        UniformBufferObject ubo{};
-        ubo.model =  glm::scale(glm::mat4(1.0f), glm::vec3(0.001f, 0.001f, 0.001f));
-        ubo.view = glm::lookAt(glm::vec3(-1.0f, 0.8f, 4.0f), glm::vec3(0.6f, 0.8f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), instances.swapChainExtent.width / (float) instances.swapChainExtent.height, 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;   //glmはopenGL用なのでY軸反転する
-
-        void* data;
-        vkMapMemory(instances.device, instances.uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
-        memcpy(data, &ubo, sizeof(ubo));
-        vkUnmapMemory(instances.device, instances.uniformBuffersMemory[currentImage]);
-    }
-
-    void updateVertex() {
-        static int verticesIndex = 0;
-        VkDeviceSize bufferSize = sizeof(instances.vertices[verticesIndex][0]) * instances.vertices[verticesIndex].size();
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        gCreateBuffer(&instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, stagingBuffer, stagingBufferMemory);
-
-        void* vdata;
-        vkMapMemory(instances.device, stagingBufferMemory, 0, bufferSize, 0, &vdata);
-        memcpy(vdata, instances.vertices[verticesIndex].data(), (size_t) bufferSize);
-        vkUnmapMemory(instances.device, stagingBufferMemory);
-        gCopyBuffer(&instances, stagingBuffer, instances.vertexBuffer, bufferSize);
-        vkDestroyBuffer(instances.device, stagingBuffer, nullptr);
-        vkFreeMemory(instances.device, stagingBufferMemory, nullptr);
-
-        if (++verticesIndex >= instances.vertices.size()) {
-            verticesIndex = 0;
-        }
-    }
-
     void cleanUp() {
         draw.destroy();
         graphicsPipeline.destroy();
         presentation.destroySwapChain();
         deviceQueue.destroy();
-        presentation.destroySurface();
-//        creatInstance.destroyInstance();
-    }
-
-    bool isFinished = false;
-
-public:
-    DrawManager() {
-    }
-
-    Instances* getInstances() {
-        return &instances;
-    }
-
-    void run(VkInstance _instance, VkSurfaceKHR _surface, QVulkanFunctions *_functions, QVulkanInstance *inst) {
-        instances.instance = _instance;
-        instances.surface = _surface;
-        instances.functions = _functions;
-        instances.qInst = inst;
-        initVulkan();
-//        mainLoop();
-//        cleanUp();
-    }
-
-    bool isFinish() {
-        return isFinished;
     }
 };
 

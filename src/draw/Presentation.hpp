@@ -145,10 +145,6 @@ public:
         }
         vkDestroySwapchainKHR(instances->device, instances->swapChain, nullptr);
     }
-
-    void destroySurface() {
-        vkDestroySurfaceKHR(instances->instance, instances->surface, nullptr);
-    }
 };
 
 

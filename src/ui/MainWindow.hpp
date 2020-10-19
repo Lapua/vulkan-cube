@@ -1,76 +1,44 @@
 #ifndef VULKAN_CUBE_MAINWINDOW_HPP
 #define VULKAN_CUBE_MAINWINDOW_HPP
 
-#include <iostream>
+#include "VulkanWindow.hpp"
 #include <QMainWindow>
-#include <QVulkanWindow>
-#include <QWidget>
-#include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QPushButton>
-#include <QVulkanInstance>
-#include <QSurface>
-#include <vulkan/vulkan.h>
-#include "src/ui/MainWindow.hpp"
 
 class MainWindow : public QMainWindow {
-    Q_OBJECT
+public:
+    MainWindow(VulkanWindow *_vulkanWindow) {
+        resize(960, 540);
+        vulkanWindow = _vulkanWindow;
+        vulkanWidget = new QWidget;
+        vulkanWidget = createWindowContainer(vulkanWindow);
+
+        QPushButton *playButton = new QPushButton("Pause / Resume");
+        QObject::connect(playButton, &QPushButton::released, this, &MainWindow::onTogglePlay);
+
+        QVBoxLayout *mainLayout = new QVBoxLayout;
+        mainLayout->addWidget(vulkanWidget);
+        mainLayout->addWidget(playButton);
+        w = new QWidget;
+        w->setLayout(mainLayout);
+        setCentralWidget(w);
+    }
+
+    void closeEvent(QCloseEvent *) {
+        vulkanWindow->destroy();
+        vulkanWidget->setParent(nullptr);
+    }
 
 private:
-    void closeEvent(QCloseEvent *event) {
-        isFrameRunning = false;
-    }
+    VulkanWindow *vulkanWindow;
+    QWidget *vulkanWidget;
+    QVBoxLayout *mainLayout;
+    QWidget *w;
 
-public:
-    bool isFrameRunning = true;
-    QVulkanWindow *windowSurface;
-    VkSurfaceKHR surface;
-    VkInstance vkInst;
-    QVulkanInstance *qInstance;
-
-    MainWindow() {
-        qInstance = new QVulkanInstance;
-        qInstance->create();
-        windowSurface = new QVulkanWindow;
-        windowSurface->setVulkanInstance(qInstance);
-        windowSurface->resize(1024, 768);
-        windowSurface->show();
-        surface = QVulkanInstance::surfaceForWindow(windowSurface);
-        vkInst = qInstance->vkInstance();
-
-        QWidget *windowWidget = QWidget::createWindowContainer(windowSurface);
-        windowWidget->setParent(this);
-
-        QWidget *centralWidget = new QWidget;
-
-        QVBoxLayout *lay = new QVBoxLayout;
-        lay->addWidget(windowWidget);
-        QPushButton *button = new QPushButton("button");
-        lay->addWidget(button);
-        centralWidget->setLayout(lay);
-
-        setCentralWidget(centralWidget);
-    }
-
-    VkSurfaceKHR getSurface(VkInstance instance) {
-        QVulkanInstance qInstance;
-        qInstance.setVkInstance(instance);
-        std::cout << "set inst" << std::endl;
-        std::cout << "set window" << std::endl;
-        return QVulkanInstance::surfaceForWindow(windowSurface);
-    }
-
-    void nextFrame() {
-//        windowSurface->requestUpdate();
-    }
-
-    void destroy(VkInstance* instance) {
-        QVulkanInstance qInstance;
-        qInstance.setVkInstance(*instance);
-        qInstance.destroy();
-    }
-
-    void queue() {
-//        qInstance->presentQueued(windowSurface);
+public slots:
+    void onTogglePlay() {
+        vulkanWindow->togglePlay();
     }
 };
 
