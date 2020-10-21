@@ -52,4 +52,9 @@ struct UniformBufferObject {
     glm::mat4 proj;
 };
 
+struct UboPositions {
+    glm::vec3 eye;
+    glm::vec3 center;
+};
+
 #endif //VULKAN_CUBE_VERTEX_HPP

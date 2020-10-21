@@ -8,6 +8,7 @@
 #include "Draw.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <chrono>
 #include <string>
 #include <cstdint>
@@ -24,16 +25,16 @@ private:
     Instances instances;
     std::vector<std::string> sensors;
     std::stack<int> sensorsHistory;
+    UboPositions uboPositions{};
 
     // TODO constructerにinstancesを渡す
-    // TODO createのスペルミス
-    Instance creatInstance;
     DeviceQueue deviceQueue;
     Presentation presentation;
     GraphicsPipeline graphicsPipeline;
     Draw draw;
 
     void initVulkan() {
+        initUboPositions();
         readFiles();
         deviceQueue.create(&instances);
 
@@ -47,6 +48,12 @@ private:
         draw.run(&instances);
     }
 
+    void initUboPositions() {
+        uboPositions.eye = glm::vec3(-1.0f, 0.8f, 4.0f);
+        uboPositions.center = glm::vec3(0.6f, 0.8f, 0.0f);
+    }
+
+    /*** reading files ***/
     void readFiles() {
         readVertexFile();
         readIndexFile();
@@ -146,13 +153,14 @@ private:
             }
         }
     }
+    /***  ***/
 
     void updateUniformbuffer(uint32_t currentImage) {
         updateVertex();
 
         UniformBufferObject ubo{};
         ubo.model =  glm::scale(glm::mat4(1.0f), glm::vec3(0.001f, 0.001f, 0.001f));
-        ubo.view = glm::lookAt(glm::vec3(-1.0f, 0.8f, 4.0f), glm::vec3(0.6f, 0.8f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ubo.view = glm::lookAt(uboPositions.eye, uboPositions.center, glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), instances.swapChainExtent.width / (float) instances.swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;   //glmはopenGL用なのでY軸反転する
 
@@ -247,6 +255,31 @@ public:
         graphicsPipeline.destroy();
         presentation.destroySwapChain();
         deviceQueue.destroy();
+    }
+
+    void rotate(float angleX, float angleY) {
+        glm::vec3 adjustVec = uboPositions.center - uboPositions.eye;
+        adjustVec = glm::rotateY(adjustVec, glm::radians(angleX));
+
+        glm::vec3 verticalAdjAxs = glm::vec3(adjustVec.x, 0.0f, adjustVec.z);
+        verticalAdjAxs = glm::rotateY(verticalAdjAxs, glm::radians(90.0f));
+        adjustVec = glm::rotate(adjustVec, glm::radians(-angleY), verticalAdjAxs);
+        uboPositions.center = adjustVec + uboPositions.eye;
+    }
+
+    void move(float x, float y, float z) {
+        glm::vec3 direction = uboPositions.center - uboPositions.eye;
+        direction.y = 0.0f;
+        float abs = powf(powf(direction.x, 2) + powf(direction.z, 2), 0.5);
+        glm::vec3 basicLenVec = direction / abs;
+
+        glm::vec3 vecX = glm::rotateY(basicLenVec, glm::radians(90.0f));
+        vecX *= x;
+        glm::vec3 vecY = glm::vec3(0.0f, y, 0.0f);
+        glm::vec3 vecZ = basicLenVec * z;
+
+        uboPositions.center += vecX + vecY + vecZ;
+        uboPositions.eye += vecX + vecY + vecZ;
     }
 };
 

@@ -3,7 +3,7 @@
 
 #include "VulkanWindow.hpp"
 #include <QMainWindow>
-#include <QVBoxLayout>
+#include <QBoxLayout>
 #include <QPushButton>
 
 class MainWindow : public QMainWindow {
@@ -14,15 +14,25 @@ public:
         vulkanWidget = new QWidget;
         vulkanWidget = createWindowContainer(vulkanWindow);
 
+        QHBoxLayout *buttonsLayout = new QHBoxLayout;
         QPushButton *playButton = new QPushButton("Pause / Resume");
-        QObject::connect(playButton, &QPushButton::released, this, &MainWindow::onTogglePlay);
+        QObject::connect(playButton, &QPushButton::released, vulkanWindow, &VulkanWindow::onTogglePlay);
+//        QPushButton *direction = new QPushButton("Direction");
+//        QObject::connect(direction, &QPushButton::pressed, vulkanWindow, &VulkanWindow::onDirectionMode);
+//        QPushButton *position = new QPushButton("Position");
+//        QObject::connect(position, &QPushButton::pressed, vulkanWindow, &VulkanWindow::onMoveMode);
+        buttonsLayout->addWidget(playButton);
+//        buttonsLayout->addWidget(direction);
+//        buttonsLayout->addWidget(position);
 
         QVBoxLayout *mainLayout = new QVBoxLayout;
         mainLayout->addWidget(vulkanWidget);
-        mainLayout->addWidget(playButton);
-        w = new QWidget;
-        w->setLayout(mainLayout);
-        setCentralWidget(w);
+        mainLayout->addLayout(buttonsLayout);
+        centralWidget = new QWidget;
+        centralWidget->setLayout(mainLayout);
+        setCentralWidget(centralWidget);
+
+        vulkanWidget->setFocus();
     }
 
     void closeEvent(QCloseEvent *) {
@@ -33,13 +43,7 @@ public:
 private:
     VulkanWindow *vulkanWindow;
     QWidget *vulkanWidget;
-    QVBoxLayout *mainLayout;
-    QWidget *w;
-
-public slots:
-    void onTogglePlay() {
-        vulkanWindow->togglePlay();
-    }
+    QWidget *centralWidget;
 };
 
 #endif //VULKAN_CUBE_MAINWINDOW_HPP
