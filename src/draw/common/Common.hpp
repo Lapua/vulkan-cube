@@ -50,6 +50,10 @@ typedef struct Instances {
     size_t currentFrame = 0;
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer axisVertexBuffer;
+    VkDeviceMemory  axisVertexBufferMemory;
+    VkPipeline axisPipeline;
+
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
     std::vector<VkBuffer> uniformBuffers;

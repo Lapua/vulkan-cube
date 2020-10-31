@@ -106,6 +106,26 @@ private:
         gCopyBuffer(instances, stagingBuffer, instances->vertexBuffer, bufferSize);
         instances->devFunctions->vkDestroyBuffer(instances->device, stagingBuffer, nullptr);
         instances->devFunctions->vkFreeMemory(instances->device, stagingBufferMemory, nullptr);
+
+        createAxisVertexBuffer();
+    }
+
+    void createAxisVertexBuffer() {
+        VkDeviceSize bufferSize = sizeof(axisVertices[0]) * axisVertices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        gCreateBuffer(instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        instances->devFunctions->vkMapMemory(instances->device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, axisVertices.data(), (size_t) bufferSize);
+        instances->devFunctions->vkUnmapMemory(instances->device, stagingBufferMemory);
+        gCreateBuffer(instances, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                      instances->axisVertexBuffer, instances->axisVertexBufferMemory);
+        gCopyBuffer(instances, stagingBuffer, instances->axisVertexBuffer, bufferSize);
+        instances->devFunctions->vkDestroyBuffer(instances->device, stagingBuffer, nullptr);
+        instances->devFunctions->vkFreeMemory(instances->device, stagingBufferMemory, nullptr);
     }
 
     void createIndexBuffer() {
@@ -223,8 +243,6 @@ private:
             renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
             renderPassInfo.pClearValues = clearValues.data();
 
-
-
             instances->devFunctions->vkCmdBeginRenderPass(instances->commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
             instances->devFunctions->vkCmdBindPipeline(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->graphicsPipeline);
@@ -238,6 +256,11 @@ private:
                 0, 1, &instances->descriptorSets[i], 0, nullptr);
 //            vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(tmpVertices.size()), 1, 0, 0);
             instances->devFunctions->vkCmdDrawIndexed(instances->commandBuffers[i], static_cast<uint32_t>(instances->gIndices.size()), 1, 0, 0, 0);
+
+            VkBuffer axisVertexBuffers[] = {instances->axisVertexBuffer};
+            instances->devFunctions->vkCmdBindPipeline(instances->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instances->axisPipeline);
+            instances->devFunctions->vkCmdBindVertexBuffers(instances->commandBuffers[i], 0, 1, axisVertexBuffers, offsets);
+            instances->devFunctions->vkCmdDraw(instances->commandBuffers[i], static_cast<uint32_t>(axisVertices.size()), 1, 0, 0);
 
             instances->devFunctions->vkCmdEndRenderPass(instances->commandBuffers[i]);
 
@@ -308,6 +331,9 @@ public:
 
         instances->devFunctions->vkDestroyBuffer(instances->device, instances->vertexBuffer, nullptr);
         instances->devFunctions->vkFreeMemory(instances->device, instances->vertexBufferMemory, nullptr);
+
+        instances->devFunctions->vkDestroyBuffer(instances->device, instances->axisVertexBuffer, nullptr);
+        instances->devFunctions->vkFreeMemory(instances->device, instances->axisVertexBufferMemory, nullptr);
 
         for (size_t i =0; i < instances->MAX_FRAME_IN_FLIGHT; i++) {
             instances->devFunctions->vkDestroySemaphore(instances->device, instances->renderFinishedSemaphores[i], nullptr);

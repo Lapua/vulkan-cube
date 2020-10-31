@@ -124,7 +124,8 @@ private:
         // input assembly
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+//        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
         // viewport
@@ -216,6 +217,16 @@ private:
             throw std::runtime_error("failed to create graphics pipeline");
         }
 
+        VkPipelineInputAssemblyStateCreateInfo axisInputAssembly{};
+        axisInputAssembly = inputAssembly;
+        axisInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+        VkGraphicsPipelineCreateInfo axisPipelineInfo{};
+        axisPipelineInfo = pipelineInfo;
+        axisPipelineInfo.pInputAssemblyState = &axisInputAssembly;
+        if (instances->devFunctions->vkCreateGraphicsPipelines(instances->device, VK_NULL_HANDLE, 1, &axisPipelineInfo, nullptr, &instances->axisPipeline) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create axis graphics pipeline");
+        }
+
         instances->devFunctions->vkDestroyShaderModule(instances->device, fragShaderModule, nullptr);
         instances->devFunctions->vkDestroyShaderModule(instances->device, vertShaderModule, nullptr);
     }
@@ -263,6 +274,7 @@ public:
         instances->devFunctions->vkDestroyPipeline(instances->device, instances->graphicsPipeline, nullptr);
         instances->devFunctions->vkDestroyPipelineLayout(instances->device, instances->pipelineLayout, nullptr);
         instances->devFunctions->vkDestroyRenderPass(instances->device, instances->renderPass, nullptr);
+        instances->devFunctions->vkDestroyPipeline(instances->device, instances->axisPipeline, nullptr);
     }
 };
 
