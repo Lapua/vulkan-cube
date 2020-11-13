@@ -90,7 +90,7 @@ const std::vector<const char*> gValidationLayers = {
 };
 
 // findQueueFamiliesは様々なところから呼び出されるため、PhysicalDeviceとは分離
-QueueFamilyIndices findQueueFamilies(Instances *instances, VkPhysicalDevice device, VkSurfaceKHR surface) {
+static QueueFamilyIndices findQueueFamilies(Instances *instances, VkPhysicalDevice device, VkSurfaceKHR surface) {
     QueueFamilyIndices indices;
 
     // QueueFamilyの取得
@@ -123,7 +123,7 @@ QueueFamilyIndices findQueueFamilies(Instances *instances, VkPhysicalDevice devi
 }
 
 /*** image view ***/
-VkImageView gCreateImageView(Instances* instances, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+static VkImageView gCreateImageView(Instances* instances, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
@@ -144,7 +144,7 @@ VkImageView gCreateImageView(Instances* instances, VkImage image, VkFormat forma
 }
 
 
-VkFormat gFindSupportedFormat(Instances* instances, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+static VkFormat gFindSupportedFormat(Instances* instances, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(instances->physicalDevice, format, &props);
@@ -159,7 +159,7 @@ VkFormat gFindSupportedFormat(Instances* instances, const std::vector<VkFormat>&
     throw std::runtime_error("failed to find supported format!");
 }
 
-VkFormat gFindDepthFormat(Instances* instances) {
+static VkFormat gFindDepthFormat(Instances* instances) {
     return gFindSupportedFormat(
         instances,
         {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
@@ -168,7 +168,7 @@ VkFormat gFindDepthFormat(Instances* instances) {
     );
 }
 
-uint32_t gFindMemoryType(Instances* instances, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+static uint32_t gFindMemoryType(Instances* instances, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(instances->physicalDevice, &memoryProperties);
 
@@ -183,7 +183,7 @@ uint32_t gFindMemoryType(Instances* instances, uint32_t typeFilter, VkMemoryProp
     throw std::runtime_error("failed to find suitable memory type");
 }
 
-void gCreateBuffer(Instances* instances, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+static void gCreateBuffer(Instances* instances, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
                    VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     VkBufferCreateInfo bufferInfo{};
@@ -211,7 +211,7 @@ void gCreateBuffer(Instances* instances, VkDeviceSize size, VkBufferUsageFlags u
     instances->devFunctions->vkBindBufferMemory(instances->device, buffer, bufferMemory, 0);
 }
 
-void gCopyBuffer(Instances* instances, VkBuffer srcBuffer ,VkBuffer dstBuffer, VkDeviceSize size) {
+static void gCopyBuffer(Instances* instances, VkBuffer srcBuffer ,VkBuffer dstBuffer, VkDeviceSize size) {
     VkCommandBufferAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;

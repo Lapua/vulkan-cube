@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     QVulkanInstance inst;
     if (!inst.create())
-        std::cout << "failed to create QVulkanInstance";
+        std::cout << "failed to create QVulkanInstance" << std::endl;
     VulkanWindow window(&inst);
     MainWindow mainWindow(&window);
     mainWindow.show();

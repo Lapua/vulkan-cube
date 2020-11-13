@@ -10,6 +10,8 @@
 
 class VulkanWindow : public QWindow
 {
+Q_OBJECT
+
 public:
     VulkanWindow(QVulkanInstance *inst) {
         qInst = inst;
@@ -20,6 +22,10 @@ public:
     }
 
     ~VulkanWindow() {
+    }
+
+    int getFrameSize() {
+        return instances->vertices.size();
     }
 
     /*** Handling events ***/
@@ -33,6 +39,7 @@ public:
                     vulkanInstance()->functions(),
                     qInst
                 );
+                emit initialized();
                 requestUpdate();
             }
         }
@@ -45,15 +52,20 @@ public:
         drawManager->move(moveX, moveY, moveZ);
         requestUpdate();
 
+        emit frameIndexUpdated(drawManager->getFrameIndex());
+
         return QWindow::event(e);
     }
-    /***  ***/
 
     void destroy() {
         isPlaying = false;
         instances->devFunctions->vkDeviceWaitIdle(instances->device);
         drawManager->cleanUp();
     }
+
+signals:
+    void frameIndexUpdated(int frame);
+    void initialized();
 
 public slots:
     void onTogglePlay() {

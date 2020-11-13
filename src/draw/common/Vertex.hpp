@@ -37,7 +37,7 @@ struct Vertex {
     }
 };
 
-std::vector<Vertex> axisVertices = {
+static std::vector<Vertex> axisVertices = {
     {{200.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
     {{-200.0f, 0.0f, 0.0f}, {0.1f, 0.0f, 0.0f}},
     {{0.0f, 200.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},

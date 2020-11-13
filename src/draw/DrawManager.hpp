@@ -23,6 +23,7 @@ class DrawManager {
 private:
     Instances instances;
     UboPositions uboPositions{};
+    int verticesIndex = 0;
 
     // TODO constructerにinstancesを渡す
     VertexData vertexData;
@@ -67,7 +68,6 @@ private:
     }
 
     void updateVertex() {
-        static int verticesIndex = 0;
         VkDeviceSize bufferSize = sizeof(instances.vertices[verticesIndex][0]) * instances.vertices[verticesIndex].size();
 
         VkBuffer stagingBuffer;
@@ -88,10 +88,6 @@ private:
     }
 
 public:
-    Instances* getInstances() {
-        return &instances;
-    }
-
     void run(VkInstance _instance, VkSurfaceKHR _surface, QVulkanFunctions *_functions, QVulkanInstance *inst) {
         instances.instance = _instance;
         instances.surface = _surface;
@@ -153,6 +149,11 @@ public:
         deviceQueue.destroy();
     }
 
+    // ↓↓↓ APIs ↓↓↓
+    Instances* getInstances() {
+        return &instances;
+    }
+
     void rotate(float angleX, float angleY) {
         glm::vec3 adjustVec = uboPositions.center - uboPositions.eye;
         adjustVec = glm::rotateY(adjustVec, glm::radians(angleX));
@@ -175,6 +176,10 @@ public:
 
         uboPositions.center += vecX + vecY + vecZ;
         uboPositions.eye += vecX + vecY + vecZ;
+    }
+
+    int getFrameIndex() {
+        return verticesIndex;
     }
 };
 
